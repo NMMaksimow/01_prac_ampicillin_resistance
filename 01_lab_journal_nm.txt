@@ -19,9 +19,12 @@ cd 01_prac_ampicillin_resistance/
 ```
 
 # initiate git
-git initiate
+```bash
+git init
+```
 
 # create .gitignore with Here Document and End Of File (EOF text text EOF)
+```bash
 cat > .gitignore <<EOF
 # Raw data - too large for git
 raw_data/*.gz
@@ -30,9 +33,6 @@ raw_data/*.fasta
 raw_data/*.fastq
 raw_data/*.bam
 raw_data/*.sam
-
-# Logs - generated files
-logs/*.log
 
 # Results - generated during analysis
 results/
@@ -50,22 +50,17 @@ __pycache__/
 *~
 .DS_Store
 EOF
-
-
-Project directory structure:
-```bash
-tree 01_prac_ampicillin_resistance/
 ```
 
-# following scripts assumes project structure:
-(bioinf) ➜  ~ tree 01_prac_ampicillin_resistance/
-01_prac_ampicillin_resistance/
-├── logs
-├── raw_data
-├── results
-└── scripts
-
-# all scripts should be run from the project directory 01_prac_ampicillin_resistance/
+## GIT!
+(bioinf) ➜  01_prac_ampicillin_resistance git:(master) ✗ git add .gitignore README.md 01_lab_journal_nm.txt
+(bioinf) ➜  01_prac_ampicillin_resistance git:(master) ✗ git commit -m "Initial commit: project structure"
+[master (root-commit) 4daec69] Initial commit: project structure
+ 3 files changed, 184 insertions(+)
+ create mode 100644 .gitignore
+ create mode 100644 01_lab_journal_nm.txt
+ create mode 100644 README.md
+##
 
 # these two were a bit dodgy (403 Forbidden)
 # amp_res_R1: https://figshare.com/ndownloader/files/23769689
@@ -79,6 +74,8 @@ wget --spider https://figshare.com/ndownloader/files/23769692
 # grep with -E Extended RegEx
 # \. means literally . not any symbol as in RegEx
 # otherwise script exited on error in log for MD5 check
+
+# all scripts should be run from the project directory 01_prac_ampicillin_resistance/
 
 ##############################################
 #### 01_downloading_raw_data_md5_check.sh ####
@@ -155,6 +152,208 @@ md5sum -c md5checksums_amp_res_reads.txt >> ../logs/md5_check.log 2>&1
 cd ..
 
 echo "Download and MD5 verification completed successfully!"
+
 ##############################################
 ##############################################
+
+## GIT!
+(bioinf) ➜  01_prac_ampicillin_resistance git:(master) ✗ git add scripts/01_downloading_raw_data_md5_check.sh
+(bioinf) ➜  01_prac_ampicillin_resistance git:(master) ✗ git commit -m "Add script to download reference, annotation and raw reads with md5 check"
+[master fc60dff] Add script to download reference, annotation and raw reads with md5 check
+ 1 file changed, 72 insertions(+)
+ create mode 100644 scripts/01_downloading_raw_data_md5_check.sh
+##
+
+Run the script:
+```bash
+chmod +x scripts/01_downloading_raw_data_md5_check.sh
+bash scripts/01_downloading_raw_data_md5_check.sh
+```
+(bioinf) ➜  01_prac_ampicillin_resistance git:(master) bash scripts/01_downloading_raw_data_md5_check.sh
+Downloading reference genome, annotation file and md5checksums...
+Downloading reads _R1.fastq.gz ...
+Downloading reads _R2.fastq.gz ...
+Checking MD5 checksums for reference genome and genome annotation
+Checking MD5 checksums for _R1 and _R2.fastq.gz read files
+Download and MD5 verification completed successfully!
+
+
+## GIT!
+(bioinf) ➜  01_prac_ampicillin_resistance git:(master) ✗ git add .gitignore logs/
+(bioinf) ➜  01_prac_ampicillin_resistance git:(master) ✗ git status
+On branch master
+Changes to be committed:
+  (use "git restore --staged <file>..." to unstage)
+        modified:   .gitignore
+        new file:   logs/data_downloading.log
+        new file:   logs/md5_check.log
+        new file:   raw_data/md5checksums.txt
+        new file:   raw_data/md5checksums_amp_res_reads.txt
+        new file:   raw_data/uncompressed_checksums.txt
+
+(bioinf) ➜  01_prac_ampicillin_resistance git:(master) ✗ git commit -m "Add download and md5 check logs, raw data too big"
+[master 3e6e440] Add download and md5 check logs, raw data too big
+ 6 files changed, 1881 insertions(+), 3 deletions(-)
+ create mode 100644 logs/data_downloading.log
+ create mode 100644 logs/md5_check.log
+ create mode 100644 raw_data/md5checksums.txt
+ create mode 100644 raw_data/md5checksums_amp_res_reads.txt
+ create mode 100644 raw_data/uncompressed_checksums.txt
+##
+
+
+(bioinf) ➜  01_prac_ampicillin_resistance git:(master) tree .
+.
+├── 01_lab_journal_nm.txt
+├── README.md
+├── logs
+│   ├── data_downloading.log
+│   └── md5_check.log
+├── raw_data
+│   ├── GCF_000005845.2_ASM584v2_genomic.fna.gz
+│   ├── GCF_000005845.2_ASM584v2_genomic.gff.gz
+│   ├── amp_res_R1.fastq.gz
+│   ├── amp_res_R2.fastq.gz
+│   ├── md5checksums.txt
+│   ├── md5checksums_amp_res_reads.txt
+│   └── uncompressed_checksums.txt
+├── results
+└── scripts
+    └── 01_downloading_raw_data_md5_check.sh
+
+5 directories, 12 files
+
+**Reference genome (FASTA format):**
+Use head to verify reference genome fna.gz data format:
+```bash
+zcat raw_data/GCF_000005845.2_ASM584v2_genomic.fna.gz | head -20
+```
+(bioinf) ➜  01_prac_ampicillin_resistance git:(master) ✗ zcat raw_data/GCF_000005845.2_ASM584v2_genomic.fna.gz | head -20
+>NC_000913.3 Escherichia coli str. K-12 substr. MG1655, complete genome
+AGCTTTTCATTCTGACTGCAACGGGCAATATGTCTCTGTGTGGATTAAAAAAAGAGTGTCTGATAGCAGCTTCTGAACTG
+GTTACCTGCCGTGAGTAAATTAAAATTTTATTGACTTAGGTCACTAAATACTTTAACCAATATAGGCATAGCGCACAGAC
+AGATAAAAATTACAGAGTACACAACATCCATGAAACGCATTAGCACCACCATTACCACCACCATCACCATTACCACAGGT
+AACGGTGCGGGCTGACGCGTACAGGAAACACAGAAAAAAGCCCGCACCTGACAGTGCGGGCTTTTTTTTTCGACCAAAGG
+TAACGAGGTAACAACCATGCGAGTGTTGAAGTTCGGCGGTACATCAGTGGCAAATGCAGAACGTTTTCTGCGTGTTGCCG
+ATATTCTGGAAAGCAATGCCAGGCAGGGGCAGGTGGCCACCGTCCTCTCTGCCCCCGCCAAAATCACCAACCACCTGGTG
+GCGATGATTGAAAAAACCATTAGCGGCCAGGATGCTTTACCCAATATCAGCGATGCCGAACGTATTTTTGCCGAACTTTT
+GACGGGACTCGCCGCCGCCCAGCCGGGGTTCCCGCTGGCGCAATTGAAAACTTTCGTCGATCAGGAATTTGCCCAAATAA
+AACATGTCCTGCATGGCATTAGTTTGTTGGGGCAGTGCCCGGATAGCATCAACGCTGCGCTGATTTGCCGTGGCGAGAAA
+ATGTCGATCGCCATTATGGCCGGCGTATTAGAAGCGCGCGGTCACAACGTTACTGTTATCGATCCGGTCGAAAAACTGCT
+GGCAGTGGGGCATTACCTCGAATCTACCGTCGATATTGCTGAGTCCACCCGCCGTATTGCGGCAAGCCGCATTCCGGCTG
+ATCACATGGTGCTGATGGCAGGTTTCACCGCCGGTAATGAAAAAGGCGAACTGGTGGTGCTTGGACGCAACGGTTCCGAC
+TACTCTGCTGCGGTGCTGGCTGCCTGTTTACGCGCCGATTGTTGCGAGATTTGGACGGACGTTGACGGGGTCTATACCTG
+CGACCCGCGTCAGGTGCCCGATGCGAGGTTGTTGAAGTCGATGTCCTACCAGGAAGCGATGGAGCTTTCCTACTTCGGCG
+CTAAAGTTCTTCACCCCCGCACCATTACCCCCATCGCCCAGTTCCAGATCCCTTGCCTGATTAAAAATACCGGAAATCCT
+CAAGCACCAGGTACGCTCATTGGTGCCAGCCGTGATGAAGACGAATTACCGGTCAAGGGCATTTCCAATCTGAATAACAT
+GGCAATGTTCAGCGTTTCTGGTCCGGGGATGAAAGGGATGGTCGGCATGGCGGCGCGCGTCTTTGCAGCGATGTCACGCG
+CCCGTATTTCCGTGGTGCTGATTACGCAATCATCTTCCGAATACAGCATCAGTTTCTGCGTTCCACAAAGCGACTGTGTG
+CGAGCTGAACGGGCAATGCAGGAAGAGTTCTACCTGGAACTGAAAGAAGGCTTACTGGAGCCGCTGGCAGTGACGGAACG
+
+There's only one contig (bacterial circular chromosome):
+```bash
+zcat raw_data/GCF_000005845.2_ASM584v2_genomic.fna.gz | grep -E "^>" | wc -l
+```
+(bioinf) ➜  01_prac_ampicillin_resistance git:(master) ✗ zcat raw_data/GCF_000005845.2_ASM584v2_genomic.fna.gz | grep -E "^>" | wc -l
+1
+
+Genome size is 4641652 bp.
+```bash
+zcat raw_data/GCF_000005845.2_ASM584v2_genomic.fna.gz | grep -v "^>" | tr -d '\n' | wc -c
+```
+(bioinf) ➜  01_prac_ampicillin_resistance git:(master) ✗ zcat raw_data/GCF_000005845.2_ASM584v2_genomic.fna.gz | grep -v "^>" | tr -d '\n' | wc -c
+4641652
+
+Use head to verify genome annotation in GFF3 format.
+```bash
+zcat raw_data/GCF_000005845.2_ASM584v2_genomic.gff.gz | head -20
+```
+(bioinf) ➜  01_prac_ampicillin_resistance git:(master) ✗ zcat raw_data/GCF_000005845.2_ASM584v2_genomic.gff.gz | head -20
+##gff-version 3
+#!gff-spec-version 1.21
+#!processor NCBI annotwriter
+#!genome-build ASM584v2
+#!genome-build-accession NCBI_Assembly:GCF_000005845.2
+##sequence-region NC_000913.3 1 4641652
+##species https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=511145
+NC_000913.3     RefSeq  region  1       4641652 .       +       .       ID=NC_000913.3:1..4641652;Dbxref=taxon:511145;Is_circular=true;Name=ANONYMOUS;gbkey=Src;genome=chromosome;mol_type=genomic DNA;strain=K-12;substrain=MG1655
+NC_000913.3     RefSeq  gene    190     255     .       +       .       ID=gene-b0001;Dbxref=ASAP:ABE-0000006,ECOCYC:EG11277,GeneID:944742;Name=thrL;gbkey=Gene;gene=thrL;gene_biotype=protein_coding;gene_synonym=ECK0001;locus_tag=b0001
+NC_000913.3     RefSeq  CDS     190     255     .       +       0       ID=cds-NP_414542.1;Parent=gene-b0001;Dbxref=UniProtKB/Swiss-Prot:P0AD86,GenBank:NP_414542.1,ASAP:ABE-0000006,ECOCYC:EG11277,GeneID:944742;Name=NP_414542.1;gbkey=CDS;gene=thrL;locus_tag=b0001;product=thr operon leader peptide;protein_id=NP_414542.1;transl_table=11
+NC_000913.3     RefSeq  gene    337     2799    .       +       .       ID=gene-b0002;Dbxref=ASAP:ABE-0000008,ECOCYC:EG10998,GeneID:945803;Name=thrA;gbkey=Gene;gene=thrA;gene_biotype=protein_coding;gene_synonym=ECK0002,Hs,thrA1,thrA2,thrD;locus_tag=b0002
+
+There're following tab separated fields in .gff (typical GFF3 format):
+<seqid><source><type><start><end><score><strand><phase>(attributes>
+
+There're 9523 annotated sequences in the reference genome. I used grep -v "^#" to remove header lines before counting annotation entries:
+```bash
+zcat raw_data/GCF_000005845.2_ASM584v2_genomic.gff.gz | grep -v "^#" | wc -l
+```
+
+(bioinf) ➜  01_prac_ampicillin_resistance git:(master) ✗ zcat raw_data/GCF_000005845.2_ASM584v2_genomic.gff.gz | wc -l
+9531
+(bioinf) ➜  01_prac_ampicillin_resistance git:(master) ✗ zcat raw_data/GCF_000005845.2_ASM584v2_genomic.gff.gz | grep -v "^#" | wc -l
+9523
+
+There're 11 unique features in reference annotation.
+```bash
+zcat raw_data/GCF_000005845.2_ASM584v2_genomic.gff.gz| grep -v "^#" | cut -f3 | sort -u | wc -l
+```
+
+(bioinf) ➜  01_prac_ampicillin_resistance git:(master) ✗ zcat raw_data/GCF_000005845.2_ASM584v2_genomic.gff.gz| grep -v "^#" | cut -f3 | sort -u | wc -l
+11
+
+The list of fatures in annotation <type>:
+```bash
+zcat raw_data/GCF_000005845.2_ASM584v2_genomic.gff.gz | grep -v "^#" | cut -f3 | sort | uniq -c
+```
+
+(bioinf) ➜  01_prac_ampicillin_resistance git:(master) ✗ zcat raw_data/GCF_000005845.2_ASM584v2_genomic.gff.gz | grep -v "^#" | cut -f3 | sort | uniq -c
+   4340 CDS
+    216 exon
+   4506 gene
+     50 mobile_genetic_element
+    108 ncRNA
+      1 origin_of_replication
+    145 pseudogene
+     22 rRNA
+      1 region
+     48 sequence_feature
+     86 tRNA
+
+I used wc -l command to count lines and then divideby 4 to count read number in FASTQ raw files.
+There're 455,876 of forward (R1) and reverse (R2) reads.
+
+```bash
+zcat raw_data/amp_res_R1.fastq.gz | wc -l | awk '{print $1/4}' \
+zcat raw_data/amp_res_R2.fastq.gz | wc -l | awk '{print $1/4}'
+```
+
+(bioinf) ➜  01_prac_ampicillin_resistance git:(master) ✗ zcat raw_data/amp_res_R1.fastq.gz | wc -l | awk '{print $1/4}'
+455876
+(bioinf) ➜  01_prac_ampicillin_resistance git:(master) ✗ zcat raw_data/amp_res_R2.fastq.gz | wc -l | awk '{print $1/4}'
+455876
+
+Use seqkit for statistics on FASTA and FASTQ files.
+```bash
+mamba install -c bioconda seqkit
+```
+
+# reference genome check
+```bash
+seqkit stats raw_data/GCF_000005845.2_ASM584v2_genomic.fna.gz
+```
+(bioinf) ➜  01_prac_ampicillin_resistance git:(master) ✗ seqkit stats raw_data/GCF_000005845.2_ASM584v2_genomic.fna.gz
+file                                              format  type  num_seqs    sum_len    min_len    avg_len    max_len
+raw_data/GCF_000005845.2_ASM584v2_genomic.fna.gz  FASTA   DNA          1  4,641,652  4,641,652  4,641,652  4,641,652
+
+# read files check
+```bash
+seqkit stats raw_data/amp_res_R*.fastq.gz
+```
+(bioinf) ➜  01_prac_ampicillin_resistance git:(master) ✗ seqkit stats raw_data/amp_res_R*.fastq.gz
+processed files:  2 / 2 [======================================] ETA: 0s. done
+file                          format  type  num_seqs     sum_len  min_len  avg_len  max_len
+raw_data/amp_res_R1.fastq.gz  FASTQ   DNA    455,876  46,043,476      101      101      101
+raw_data/amp_res_R2.fastq.gz  FASTQ   DNA    455,876  46,043,476      101      101      101
+
 
