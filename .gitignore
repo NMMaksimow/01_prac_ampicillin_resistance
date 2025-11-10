@@ -4,9 +4,6 @@ raw_data/*.fna
 raw_data/*.fasta
 raw_data/*.fastq
 
-# Log files - generated, not source code
-logs/*.log
-
 # Results - generated during analysis
 results/
 

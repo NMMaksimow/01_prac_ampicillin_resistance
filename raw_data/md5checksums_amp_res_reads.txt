@@ -1,0 +1,2 @@
+181588f2e9196486479381bf3a0611e9  amp_res_R1.fastq.gz
+2a768a51991ac35baf8847c9be2a51f3  amp_res_R2.fastq.gz

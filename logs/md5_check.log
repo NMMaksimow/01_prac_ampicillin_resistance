@@ -1,0 +1,9 @@
+./GCF_000005845.2_ASM584v2_genomic.fna.gz: OK
+./GCF_000005845.2_ASM584v2_genomic.gff.gz: OK
+
+Created MD5 checksums file for ampicillin-resistant reads:
+181588f2e9196486479381bf3a0611e9  amp_res_R1.fastq.gz
+2a768a51991ac35baf8847c9be2a51f3  amp_res_R2.fastq.gz
+
+amp_res_R1.fastq.gz: OK
+amp_res_R2.fastq.gz: OK
