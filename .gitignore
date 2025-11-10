@@ -1,8 +1,15 @@
-# Raw data files - too large for git
-raw_data/*.gz
-raw_data/*.fna
-raw_data/*.fasta
-raw_data/*.fastq
+# Data files - too large for git
+*.gz
+*.fna
+*.fasta
+*.fastq
+*.bam
+*.sam
+*.vcf
+*.fa
+
+# Logs - generated files
+logs/
 
 # Results - generated during analysis
 results/

@@ -5,8 +5,7 @@
 ----
 ## 2025-10-11 - Project setup and data download
 # ---- Antibiotic resistance in E. coli ----
-### ---- Data uploading ----
-
+### ---- 00_Set up the project directory ----
 # activate environment
 ```bash
 mamba activate bioinf
@@ -77,6 +76,8 @@ wget --spider https://figshare.com/ndownloader/files/23769692
 
 # all scripts should be run from the project directory 01_prac_ampicillin_resistance/
 
+
+### ---- 01_Download raw data and verify its integrity ----
 ##############################################
 #### 01_downloading_raw_data_md5_check.sh ####
 ##############################################
@@ -223,6 +224,7 @@ Changes to be committed:
 
 5 directories, 12 files
 
+## ---- 03_Verify the data formats and data inspection ----
 **Reference genome (FASTA format):**
 Use head to verify reference genome fna.gz data format:
 ```bash
@@ -356,4 +358,62 @@ file                          format  type  num_seqs     sum_len  min_len  avg_l
 raw_data/amp_res_R1.fastq.gz  FASTQ   DNA    455,876  46,043,476      101      101      101
 raw_data/amp_res_R2.fastq.gz  FASTQ   DNA    455,876  46,043,476      101      101      101
 
+### ---- 04_Quality control using FastQC ----
+Install FastQC using mamba package manager:
+```bash
+mamba install -c bioconda fastqc
+fastqc --version
+```
+(bioinf) ➜  01_prac_ampicillin_resistance git:(master) fastqc --version
+FastQC v0.12.1
 
+
+## Run FastQC on reads to create reports on read quality.
+```bash
+mkdir -p results/fastqc
+fastqc raw_data/*.fastq.gz -o results/fastqc &> logs/fastqc.log
+```
+Reports suggest quality trimming at the end of the reads based on per base sequence quality plot.
+
+Total Sequences	455876
+Total Bases	46 Mbp
+Sequences flagged as poor quality	0
+Sequence length	101
+%GC	50
+
+
+## ---- 05_Quality_trimming_with_fastp ----
+
+Install fastp for quality trimming:
+```bash
+mamba install -c bioconda fastqc
+fastp --version
+```
+(bioinf) ➜  01_prac_ampicillin_resistance git:(master) ✗ fastp --version
+fastp 1.0.1
+
+```bash
+mkdir -p results/trimmed
+```
+
+Extractions on some options rom fastp --help:
+  -q, --qualified_quality_phred        the quality value that a base is qualified. Default 15 means phred quality >=Q15 is qualified. (int [=15])
+  -u, --unqualified_percent_limit      how many percents of bases are allowed to be unqualified (0~100). Default 40 means 40% (int [=40])
+  -n, --n_base_limit                   if one read's number of N base is >n_base_limit, then this read/pair is discarded. Default is 5 (int [=5])
+  -l, --length_required                reads shorter than length_required will be discarded, default is 15. (int [=15])
+  -2, --detect_adapter_for_pe          enable adapter detection for PE data to get ultra-clean data. It takes more time to find just a little bit more adapters.
+  -j, --json                           the json format report file name (string [=fastp.json])
+  -h, --html                           the html format report file name (string [=fastp.html])
+
+```bash
+fastp \
+  -i raw_data/amp_res_R1.fastq.gz \
+  -I raw_data/amp_res_R2.fastq.gz \
+  -o results/trimmed/amp_res_R1_trimmed.fastq.gz \
+  -O results/trimmed/amp_res_R2_trimmed.fastq.gz \
+  -q 20 -u 30 -n 5 -l 50 \
+  --detect_adapter_for_pe \
+  --html results/trimmed/fastp_amp_res.html \
+  --json results/trimmed/fastp_amp_res.json \
+  > logs/fastp_trimming.log 2>&1
+```
