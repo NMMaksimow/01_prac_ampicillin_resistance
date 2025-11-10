@@ -1,0 +1,160 @@
+# LabJournal
+# Nikita Maksimov
+# Project: Identification of ampicillin-resistance mechanism in E. coli
+# Goal: Identify mutations conferring ampicillin resistance by comparing resistant strain to reference genome
+----
+## 2025-10-11 - Project setup and data download
+# ---- Antibiotic resistance in E. coli ----
+### ---- Data uploading ----
+
+# activate environment
+```bash
+mamba activate bioinf
+```
+
+# create project directory tree
+```bash
+mkdir -p 01_prac_ampicillin_resistance/{raw_data,logs,scripts,results}
+cd 01_prac_ampicillin_resistance/
+```
+
+# initiate git
+git initiate
+
+# create .gitignore with Here Document and End Of File (EOF text text EOF)
+cat > .gitignore <<EOF
+# Raw data - too large for git
+raw_data/*.gz
+raw_data/*.fna
+raw_data/*.fasta
+raw_data/*.fastq
+raw_data/*.bam
+raw_data/*.sam
+
+# Logs - generated files
+logs/*.log
+
+# Results - generated during analysis
+results/
+
+# Python
+__pycache__/
+*.pyc
+
+# R
+.Rhistory
+.RData
+
+# Editor
+*.swp
+*~
+.DS_Store
+EOF
+
+
+Project directory structure:
+```bash
+tree 01_prac_ampicillin_resistance/
+```
+
+# following scripts assumes project structure:
+(bioinf) ➜  ~ tree 01_prac_ampicillin_resistance/
+01_prac_ampicillin_resistance/
+├── logs
+├── raw_data
+├── results
+└── scripts
+
+# all scripts should be run from the project directory 01_prac_ampicillin_resistance/
+
+# these two were a bit dodgy (403 Forbidden)
+# amp_res_R1: https://figshare.com/ndownloader/files/23769689
+# amp_res_R2: https://figshare.com/ndownloader/files/23769692
+
+# interactive check whether connection exist
+wget --spider https://figshare.com/ndownloader/files/23769689
+wget --spider https://figshare.com/ndownloader/files/23769692
+
+# to check MD5 checksum and write logs I used grep to filter only downloaded files from others present on ncbi
+# grep with -E Extended RegEx
+# \. means literally . not any symbol as in RegEx
+# otherwise script exited on error in log for MD5 check
+
+##############################################
+#### 01_downloading_raw_data_md5_check.sh ####
+##############################################
+#!/bin/bash
+# This script
+# -- dowloads to raw_data dir:
+# 1) reference E. coli genome in fasta format (genomic.fna.gz);
+# 2) reference E. coli genome annotation in GFF3 format (genomic.gff.gz);
+# 3) files with MD5 checksums (for archives and uncompressed files as well);
+# 4) raw shotgun Illumina PE reads (_R1, _R2) of ampicillin-resistant E. coli stain in fastq format (fastq.gz).
+# -- checks MD5 sums for:
+# 1) reference and annotation (md5checksums.txt);
+# 2) raw reads _R1 and _R2 (md5checksums_amp_res_reads.txt).
+# -- writes to logs dir:
+# 1) data_downloading.log
+# 2) md5_check.log
+
+
+# exit on error, undefined variables, and pipe failures
+set -e
+set -u
+set -o pipefail
+
+##-- DOWNLOAD --
+
+echo "Downloading reference genome, annotation file and md5checksums..."
+wget -c -P raw_data -a logs/data_downloading.log \
+        https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/005/845/GCF_000005845.2_ASM584v2/GCF_000005845.2_ASM584v2_genomic.fna.gz \
+        https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/005/845/GCF_000005845.2_ASM584v2/GCF_000005845.2_ASM584v2_genomic.gff.gz \
+        https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/005/845/GCF_000005845.2_ASM584v2/md5checksums.txt \
+        https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/005/845/GCF_000005845.2_ASM584v2/uncompressed_checksums.txt
+
+# downlad raw reads from figshare
+# pretend to be a browser Mozilla/5.0 to pass figshare block
+# wget writes downloading progress messages to stderr 2>
+
+echo "Downloading reads _R1.fastq.gz ..."
+wget -c --user-agent="Mozilla/5.0" \
+  -O raw_data/amp_res_R1.fastq.gz \
+  https://figshare.com/ndownloader/files/23769689 \
+  -a logs/data_downloading.log
+
+echo "Downloading reads _R2.fastq.gz ..."
+wget -c --user-agent="Mozilla/5.0" \
+  -O raw_data/amp_res_R2.fastq.gz \
+  https://figshare.com/ndownloader/files/23769692 \
+  -a logs/data_downloading.log
+
+##--CHECK MD5 CHECKSUMS --
+# stdout and stderr directed to log file
+# grep otherwise the script will exit cause FAILED checks on un-downloaded files related to reference
+echo "Checking MD5 checksums for reference genome and genome annotation"
+cd raw_data
+grep -E "ASM584v2_genomic\.(fna|gff)\.gz" md5checksums.txt | md5sum -c > ../logs/md5_check.log 2>&1
+cd ..
+
+# create md5checksums file with hashes from figshare info and file names
+# field separator for md5checksums files is 2 spaces
+
+cat > raw_data/md5checksums_amp_res_reads.txt <<EOF
+181588f2e9196486479381bf3a0611e9  amp_res_R1.fastq.gz
+2a768a51991ac35baf8847c9be2a51f3  amp_res_R2.fastq.gz
+EOF
+
+echo "" >> logs/md5_check.log
+echo "Created MD5 checksums file for ampicillin-resistant reads:" >> logs/md5_check.log
+cat raw_data/md5checksums_amp_res_reads.txt >> logs/md5_check.log
+
+echo "Checking MD5 checksums for _R1 and _R2.fastq.gz read files"
+echo "" >> logs/md5_check.log
+cd raw_data
+md5sum -c md5checksums_amp_res_reads.txt >> ../logs/md5_check.log 2>&1
+cd ..
+
+echo "Download and MD5 verification completed successfully!"
+##############################################
+##############################################
+
