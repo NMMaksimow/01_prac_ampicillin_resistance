@@ -5,7 +5,7 @@
 ----
 ## 2025-10-11 - Project setup and data download
 # ---- Antibiotic resistance in E. coli ----
-### ---- 00_Set up the project directory ----
+## ---- 00_Set up the project directory ----
 # activate environment
 ```bash
 mamba activate bioinf
@@ -77,7 +77,7 @@ wget --spider https://figshare.com/ndownloader/files/23769692
 # all scripts should be run from the project directory 01_prac_ampicillin_resistance/
 
 
-### ---- 01_Download raw data and verify its integrity ----
+## ---- 01_Download raw data and verify its integrity ----
 ##############################################
 #### 01_downloading_raw_data_md5_check.sh ####
 ##############################################
@@ -224,7 +224,7 @@ Changes to be committed:
 
 5 directories, 12 files
 
-## ---- 03_Verify the data formats and data inspection ----
+## ---- 03_Verify_the_data_formats_and_data_inspection ----
 **Reference genome (FASTA format):**
 Use head to verify reference genome fna.gz data format:
 ```bash
@@ -382,7 +382,7 @@ Sequence length	101
 %GC	50
 
 
-## ---- 05_Quality-based_trimming ----
+## ---- 05 Quality-based trimming and post-trimming quality control with FastQC ----
 ## Using fastp for trimming
 Install fastp for quality trimming:
 ```bash
@@ -474,7 +474,7 @@ mkdir -p results/fastqc_trimmomatic_strictly_trimmed
 fastqc results/trimmomatic_strictly_trimmed/*P.fastq.gz -o results/fastqc_trimmomatic_strictly_trimmed &> logs/fastqc_trimmomatic_strictrly_trimmed.log
 ```
 
-## ---- Alignment and mapping ----
+## ---- 05 Alignment and mapping ----
 bwa already exists in the environment, so there's no need for installation
 
 Creating index for reference genome using bwa index command:
@@ -621,3 +621,183 @@ md5sum: ./GCF_000005845.2_ASM584v2_translated_cds.faa: No such file or directory
 ./GCF_000005845.2_ASM584v2_translated_cds.faa: FAILED open or read
 md5sum: WARNING: 11 listed files could not be read
 
+Inspect in IGV:
+1) genome reference in .fna,
+2) archived annotation gff.gz and 
+3) alignment map _sorted.bam with index _sorted.bam.bai in the same directory
+
+Some summary on alignment map files.
+```bash
+mkdir -p results/alignment_stats
+```
+
+```bash
+for bam in results/bwa_alignments/*_sorted.bam; do
+    base=$(basename "$bam" _sorted.bam)
+    samtools flagstat "$bam" > results/alignment_stats/${base}_flagstat.txt
+    samtools idxstats "$bam" > results/alignment_stats/${base}_idxstats.txt
+done
+```
+
+##############################################
+#### Script to collect alignment stats #######
+##############################################
+#!/usr/bin/env bash
+set -euo pipefail
+
+# === PATHS ===
+ALIGN_DIR="results/bwa_alignments"
+STATS_DIR="results/alignment_stats"
+LOG_DIR="logs"
+OUTFILE="${STATS_DIR}/alignment_summary.tsv"
+
+mkdir -p "$STATS_DIR" "$LOG_DIR"
+
+echo -e "sample\ttotal_reads\tmapped_reads\tproperly_paired\tpercent_mapped\tpercent_proper\tmean_depth\tavg_MAPQ" > "$OUTFILE"
+
+# === MAIN LOOP ===
+for bam in ${ALIGN_DIR}/*_sorted.bam; do
+    base=$(basename "$bam" _sorted.bam)
+    flagfile="${STATS_DIR}/${base}_flagstat.txt"
+    idxfile="${STATS_DIR}/${base}_idxstats.txt"
+
+    echo "Processing ${base}..."
+
+    # total reads
+    total=$(grep "in total" "$flagfile" | awk '{print $1}')
+    # mapped reads
+    mapped=$(grep " mapped (" "$flagfile" | head -n1 | awk '{print $1}')
+    # properly paired reads
+    proper=$(grep "properly paired" "$flagfile" | awk '{print $1}')
+    # % mapped
+    pmapped=$(awk -v m=$mapped -v t=$total 'BEGIN{printf "%.2f", (m/t)*100}')
+    # % proper
+    pproper=$(awk -v p=$proper -v t=$total 'BEGIN{printf "%.2f", (p/t)*100}')
+
+    # mean depth (все позиции, включая нулевые)
+    depth=$(samtools depth -a "$bam" | awk '{sum+=$3; n++} END{if(n>0) print sum/n; else print 0}')
+
+    # среднее значение MAPQ
+    mapq=$(samtools view "$bam" | awk '{m[$5]++} END{for (k in m){sum+=k*m[k]; n+=m[k]} if(n>0) printf "%.2f", sum/n; else print 0}')
+
+    echo -e "${base}\t${total}\t${mapped}\t${proper}\t${pmapped}\t${pproper}\t${depth}\t${mapq}" >> "$OUTFILE"
+done
+
+echo "Summary written to: $OUTFILE"
+
+##############################################
+##############################################
+
+
+## ---- 06 Variant calling ----
+```bash
+mamba install -c bioconda -c conda-forge varscan
+```
+```bash
+varscan --help
+```
+
+```bash
+mkdir -p results/variant_calling
+```
+Create mpileup files to count how many reads have a mutation at the same position.
+mpileup files are required for SNP calling by varscan
+
+```bash
+for bam in results/bwa_alignments/*_sorted.bam; do
+    base=$(basename "$bam" _sorted.bam)
+    echo "Calling variants for $base..."
+
+    samtools mpileup \
+        -f raw_data/GCF_000005845.2_ASM584v2_genomic.fna \
+        -o results/variant_calling/${base}.mpileup \
+        "$bam" \
+        2>> logs/samtools_mpileup.log
+done
+```
+Extracts on some of samtools mpileup options from samtools mpileup --help:
+  -B, --no-BAQ            disable BAQ (per-Base Alignment Quality)
+  -q, --min-MQ INT        skip alignments with mapQ smaller than INT [0]
+  -Q, --min-BQ INT        skip bases with baseQ/BAQ smaller than INT [13]
+ 
+SNP calling
+```bash
+for mpileup in results/variant_calling/*.mpileup; do
+    base=$(basename "$mpileup" .mpileup)
+    echo "Identifying SNPs from $base ..."
+    
+    varscan mpileup2snp "$mpileup" \
+        --min-var-freq 0.7 \
+        --variants \
+        --output-vcf 1 \
+        > results/variant_calling/varscan_res_${base}.vcf \
+        2>> logs/varscan_mpileup2snp.log
+done
+```
+
+VCF (variant call format) is a tabular format and it could be digested by IGV for visualization.
+(bioinf) ➜  01_prac_ampicillin_resistance git:(master) ✗ less -S results/variant_calling/varscan_res_aln_trimmomatic_trimmed.vcf | grep -v "^##" | cat
+#CHROM  POS     ID      REF     ALT     QUAL    FILTER  INFO    FORMAT  Sample1
+NC_000913.3     93043   .       C       G       .       PASS    ADP=17;WT=0;HET=0;HOM=1;NC=0    GT:GQ:SDP:DP:RD:AD:FREQ:PVAL:RBQ:ABQ:RDF:RDR:ADF:ADR    1/1:93:18:17:0:17:100%:4.2852E-10:0:36:0:0:7:10
+NC_000913.3     482698  .       T       A       .       PASS    ADP=16;WT=0;HET=0;HOM=1;NC=0    GT:GQ:SDP:DP:RD:AD:FREQ:PVAL:RBQ:ABQ:RDF:RDR:ADF:ADR    1/1:87:16:16:0:16:100%:1.6637E-9:0:45:0:0:7:9
+NC_000913.3     852762  .       A       G       .       PASS    ADP=14;WT=0;HET=0;HOM=1;NC=0    GT:GQ:SDP:DP:RD:AD:FREQ:PVAL:RBQ:ABQ:RDF:RDR:ADF:ADR    1/1:76:14:14:0:14:100%:2.4927E-8:0:36:0:0:8:6
+NC_000913.3     1905761 .       G       A       .       PASS    ADP=13;WT=0;HET=0;HOM=1;NC=0    GT:GQ:SDP:DP:RD:AD:FREQ:PVAL:RBQ:ABQ:RDF:RDR:ADF:ADR    1/1:70:13:13:0:13:100%:9.6148E-8:0:44:0:0:11:2
+NC_000913.3     3535147 .       A       C       .       PASS    ADP=17;WT=0;HET=0;HOM=1;NC=0    GT:GQ:SDP:DP:RD:AD:FREQ:PVAL:RBQ:ABQ:RDF:RDR:ADF:ADR    1/1:93:17:17:0:17:100%:4.2852E-10:0:36:0:0:10:7
+NC_000913.3     4390754 .       G       T       .       PASS    ADP=15;WT=0;HET=0;HOM=1;NC=0    GT:GQ:SDP:DP:RD:AD:FREQ:PVAL:RBQ:ABQ:RDF:RDR:ADF:ADR    1/1:81:16:15:0:15:100%:6.4467E-9:0:36:0:0:8:7
+(bioinf) ➜  01_prac_ampicillin_resistance git:(master) ✗ less -S results/variant_calling/varscan_res_aln_trimmomatic_strictly_trimmed.vcf | grep -v "^##" | cat
+#CHROM  POS     ID      REF     ALT     QUAL    FILTER  INFO    FORMAT  Sample1
+NC_000913.3     93043   .       C       G       .       PASS    ADP=9;WT=0;HET=0;HOM=1;NC=0     GT:GQ:SDP:DP:RD:AD:FREQ:PVAL:RBQ:ABQ:RDF:RDR:ADF:ADR    1/1:46:9:9:0:9:100%:2.0568E-5:0:36:0:0:3:6
+NC_000913.3     482698  .       T       A       .       PASS    ADP=13;WT=0;HET=0;HOM=1;NC=0    GT:GQ:SDP:DP:RD:AD:FREQ:PVAL:RBQ:ABQ:RDF:RDR:ADF:ADR    1/1:70:13:13:0:13:100%:9.6148E-8:0:43:0:0:5:8
+NC_000913.3     852762  .       A       G       .       PASS    ADP=9;WT=0;HET=0;HOM=1;NC=0     GT:GQ:SDP:DP:RD:AD:FREQ:PVAL:RBQ:ABQ:RDF:RDR:ADF:ADR    1/1:46:9:9:0:9:100%:2.0568E-5:0:38:0:0:6:3
+NC_000913.3     1905761 .       G       A       .       PASS    ADP=11;WT=0;HET=0;HOM=1;NC=0    GT:GQ:SDP:DP:RD:AD:FREQ:PVAL:RBQ:ABQ:RDF:RDR:ADF:ADR    1/1:58:11:11:0:11:100%:1.4176E-6:0:43:0:0:9:2
+NC_000913.3     3535147 .       A       C       .       PASS    ADP=9;WT=0;HET=0;HOM=1;NC=0     GT:GQ:SDP:DP:RD:AD:FREQ:PVAL:RBQ:ABQ:RDF:RDR:ADF:ADR    1/1:46:9:9:0:9:100%:2.0568E-5:0:32:0:0:4:5
+NC_000913.3     4390754 .       G       T       .       PASS    ADP=12;WT=0;HET=0;HOM=1;NC=0    GT:GQ:SDP:DP:RD:AD:FREQ:PVAL:RBQ:ABQ:RDF:RDR:ADF:ADR    1/1:64:12:12:0:12:100%:3.698E-7:0:37:0:0:5:7
+(bioinf) ➜  01_prac_ampicillin_resistance git:(master) ✗ less -S results/variant_calling/varscan_res_aln_fastp.vcf | grep -v "^##" | cat
+#CHROM  POS     ID      REF     ALT     QUAL    FILTER  INFO    FORMAT  Sample1
+NC_000913.3     93043   .       C       G       .       PASS    ADP=13;WT=0;HET=0;HOM=1;NC=0    GT:GQ:SDP:DP:RD:AD:FREQ:PVAL:RBQ:ABQ:RDF:RDR:ADF:ADR    1/1:70:13:13:0:13:100%:9.6148E-8:0:36:0:0:4:9
+NC_000913.3     482698  .       T       A       .       PASS    ADP=15;WT=0;HET=0;HOM=1;NC=0    GT:GQ:SDP:DP:RD:AD:FREQ:PVAL:RBQ:ABQ:RDF:RDR:ADF:ADR    1/1:81:15:15:0:15:100%:6.4467E-9:0:45:0:0:6:9
+NC_000913.3     852762  .       A       G       .       PASS    ADP=13;WT=0;HET=0;HOM=1;NC=0    GT:GQ:SDP:DP:RD:AD:FREQ:PVAL:RBQ:ABQ:RDF:RDR:ADF:ADR    1/1:70:13:13:0:13:100%:9.6148E-8:0:36:0:0:8:5
+NC_000913.3     1905761 .       G       A       .       PASS    ADP=12;WT=0;HET=0;HOM=1;NC=0    GT:GQ:SDP:DP:RD:AD:FREQ:PVAL:RBQ:ABQ:RDF:RDR:ADF:ADR    1/1:64:12:12:0:12:100%:3.698E-7:0:45:0:0:10:2
+NC_000913.3     3535147 .       A       C       .       PASS    ADP=10;WT=0;HET=0;HOM=1;NC=0    GT:GQ:SDP:DP:RD:AD:FREQ:PVAL:RBQ:ABQ:RDF:RDR:ADF:ADR    1/1:52:10:10:0:10:100%:5.4125E-6:0:39:0:0:5:5
+NC_000913.3     4390754 .       G       T       .       PASS    ADP=16;WT=0;HET=0;HOM=1;NC=0    GT:GQ:SDP:DP:RD:AD:FREQ:PVAL:RBQ:ABQ:RDF:RDR:ADF:ADR    1/1:87:16:16:0:16:100%:1.6637E-9:0:34:0:0:8:8
+
+
+## ---- 07 Automatic SNP annotation and variant effect prediction ----
+
+```bash
+# downlad snpEff for automatica annotation
+mamba install -c bioconda snpEff
+
+# create a directory with K12 reference strain database
+mkdir -p results/snpEff/data/k12
+
+# create snpEff.config file in variant_calling directory
+cat > results/snpEff/snpEff.config <<EOF
+k12.genome : ecoli_K12
+EOF
+
+# download GBFF file with annotation and reference sequence
+wget -c -P results/snpEff/data/k12 -a logs/gbff_download.log \
+  https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/005/845/GCF_000005845.2_ASM584v2/GCF_000005845.2_ASM584v2_genomic.gbff.gz
+
+# unzip file with renaming to database folder
+gzip -d results/snpEff/data/k12/*.gz
+mv results/snpEff/data/k12/*.gbff results/snpEff/data/k12/genes.gbk
+
+# create database
+snpEff build -genbank -v k12 -c results/snpEff/snpEff.config &> logs/snpEff_build.log
+
+# for loop for annotation of three different VCF files
+for vcf in results/variant_calling/*.vcf; do
+    base=$(basename "$vcf" .vcf)
+    echo "Annotating $base.vcf ..."
+    
+    snpEff ann -c results/snpEff/snpEff.config k12 "$vcf" \
+        > results/variant_calling/${base}_annotated.vcf \
+        2>> logs/snpEff_annotation.log
+done
+```
+
+
+grep "ANN=" results/variant_calling/varscan_res_aln_fastp_annotated.vcf \
+  | sed 's/.*ANN=//' | cut -d'|' -f4 | sort | uniq -c

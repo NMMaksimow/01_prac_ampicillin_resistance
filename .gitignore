@@ -8,6 +8,7 @@
 *.sam
 *.vcf
 *.fa
+*.fai
 
 # Logs - generated files
 logs/
