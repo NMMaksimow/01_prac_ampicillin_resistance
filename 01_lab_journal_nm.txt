@@ -798,6 +798,7 @@ for vcf in results/variant_calling/*.vcf; do
 done
 ```
 
-
+```bash
 grep "ANN=" results/variant_calling/varscan_res_aln_fastp_annotated.vcf \
   | sed 's/.*ANN=//' | cut -d'|' -f4 | sort | uniq -c
+```
