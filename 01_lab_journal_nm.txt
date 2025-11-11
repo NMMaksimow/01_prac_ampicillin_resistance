@@ -382,8 +382,8 @@ Sequence length	101
 %GC	50
 
 
-## ---- 05_Quality_trimming_with_fastp ----
-
+## ---- 05_Quality-based_trimming ----
+## Using fastp for trimming
 Install fastp for quality trimming:
 ```bash
 mamba install -c bioconda fastqc
@@ -393,7 +393,7 @@ fastp --version
 fastp 1.0.1
 
 ```bash
-mkdir -p results/trimmed
+mkdir -p results/fastp_trimmed
 ```
 
 Extractions on some options rom fastp --help:
@@ -409,11 +409,215 @@ Extractions on some options rom fastp --help:
 fastp \
   -i raw_data/amp_res_R1.fastq.gz \
   -I raw_data/amp_res_R2.fastq.gz \
-  -o results/trimmed/amp_res_R1_trimmed.fastq.gz \
-  -O results/trimmed/amp_res_R2_trimmed.fastq.gz \
-  -q 20 -u 30 -n 5 -l 50 \
+  -o results/fastp_trimmed/amp_res_R1_trimmed.fastq.gz \
+  -O results/fastp_trimmed/amp_res_R2_trimmed.fastq.gz \
+  -q 20 -u 25 -n 5 -l 50 \
   --detect_adapter_for_pe \
-  --html results/trimmed/fastp_amp_res.html \
-  --json results/trimmed/fastp_amp_res.json \
+  --html results/fastp_trimmed/fastp_amp_res.html \
+  --json results/fastp_trimmed/fastp_amp_res.json \
   > logs/fastp_trimming.log 2>&1
 ```
+
+FastQC after trimming with fastp:
+```bash
+mkdir -p results/fastqc_fastp_trimmed
+fastqc results/fastp_trimmed/*.fastq.gz -o results/fastqc_fastp_trimmed &> logs/fastqc_fastp_trimmed.log
+```
+
+The number of trimmed sequences is equal for _R1 and _R2 read fastq.gz.
+380531 reads passed the filter.
+
+## Using trimmomatic for trimming
+Install trimmomatic
+```bash
+mamba install -c bioconda Trimmomatic
+trimmomatic -version
+```
+(bioinf) ➜  01_prac_ampicillin_resistance git:(master) ✗ trimmomatic -version
+0.40
+
+```bash
+mkdir -p results/trimmomatic_trimmed
+```
+Option -phred33 because html FastQC report says: Encoding	Sanger / Illumina 1.9.
+
+```bash
+trimmomatic PE -threads 4 -phred33 \
+  raw_data/amp_res_R1.fastq.gz raw_data/amp_res_R2.fastq.gz \
+  -baseout results/trimmomatic_trimmed/amp_res.fastq.gz \
+  LEADING:20 TRAILING:20 SLIDINGWINDOW:10:20 MINLEN:20 \
+  > logs/trimmomatic_trimming.log 2>&1
+ ```
+FastQC on paired fastq files after trimming with trimmomatic:
+```bash
+mkdir -p results/fastqc_trimmomatic_trimmed
+fastqc results/trimmomatic_trimmed/*P.fastq.gz -o results/fastqc_trimmomatic_trimmed &> logs/fastqc_trimmomatic_trimmed.log
+```
+ 
+## Trimmomatic for more strict trimming
+Here QS for trimming is 30.
+```bash
+mkdir -p results/trimmomatic_strictly_trimmed
+```
+
+```bash
+trimmomatic PE -threads 4 -phred33 \
+  raw_data/amp_res_R1.fastq.gz raw_data/amp_res_R2.fastq.gz \
+  -baseout results/trimmomatic_strictly_trimmed/amp_res_strictly.fastq.gz \
+  LEADING:30 TRAILING:30 SLIDINGWINDOW:10:30 MINLEN:20 \
+  > logs/trimmomatic_strict_trimming.log 2>&1
+```
+
+FastQC on paired fastq files after strict trimming with trimmomatic:
+```bash
+mkdir -p results/fastqc_trimmomatic_strictly_trimmed
+fastqc results/trimmomatic_strictly_trimmed/*P.fastq.gz -o results/fastqc_trimmomatic_strictly_trimmed &> logs/fastqc_trimmomatic_strictrly_trimmed.log
+```
+
+## ---- Alignment and mapping ----
+bwa already exists in the environment, so there's no need for installation
+
+Creating index for reference genome using bwa index command:
+```bash
+bwa index raw_data/GCF_000005845.2_ASM584v2_genomic.fna.gz &> logs/bwa_index.log
+```
+
+NB! Resulting BW index files (suffixes .amb, .ann, .bwt, .pac, .sa) are located in raw_data directory, so that other programs can find them.
+
+├── raw_data
+│   ├── GCF_000005845.2_ASM584v2_genomic.fna.gz
+│   ├── GCF_000005845.2_ASM584v2_genomic.fna.gz.amb
+│   ├── GCF_000005845.2_ASM584v2_genomic.fna.gz.ann
+│   ├── GCF_000005845.2_ASM584v2_genomic.fna.gz.bwt
+│   ├── GCF_000005845.2_ASM584v2_genomic.fna.gz.pac
+│   ├── GCF_000005845.2_ASM584v2_genomic.fna.gz.sa
+│   ├── GCF_000005845.2_ASM584v2_genomic.gff.gz
+│   ├── amp_res_R1.fastq.gz
+│   ├── amp_res_R2.fastq.gz
+│   ├── md5checksums.txt
+│   ├── md5checksums_amp_res_reads.txt
+│   └── uncompressed_checksums.txt
+
+Aligning and mapping trimmed R1 and R2 reads to reference genome:
+
+```bash
+mkdir results/bwa_alignments
+```
+
+Three alignments SAM files will be generated based on three different trimming strategies.
+# trimmomatic trimming
+```bash
+bwa mem raw_data/GCF_000005845.2_ASM584v2_genomic.fna.gz \
+	results/trimmomatic_trimmed/amp_res_1P.fastq.gz \
+	results/trimmomatic_trimmed/amp_res_2P.fastq.gz \
+	> results/bwa_alignments/aln_trimmomatic_trimmed.sam 2> logs/bwa_mem_trimmomatic.log
+```
+# strict trimmomatic trimming
+```bash	
+bwa mem raw_data/GCF_000005845.2_ASM584v2_genomic.fna.gz \
+	results/trimmomatic_strictly_trimmed/amp_res_strictly_1P.fastq.gz \
+	results/trimmomatic_strictly_trimmed/amp_res_strictly_2P.fastq.gz \
+	> results/bwa_alignments/aln_trimmomatic_strictly_trimmed.sam 2> logs/bwa_mem_trimmomatic_strictly.log \
+```
+# fastp trimming
+```bash
+bwa mem raw_data/GCF_000005845.2_ASM584v2_genomic.fna.gz \
+	results/fastp_trimmed/amp_res_R1_trimmed.fastq.gz \
+	results/fastp_trimmed/amp_res_R2_trimmed.fastq.gz \
+	> results/bwa_alignments/aln_fastp.sam 2> logs/bwa_mem_fastp.log 
+```
+
+├── results
+│   ├── bwa_alignments
+│   │   ├── aln_fastp.sam
+│   │   ├── aln_trimmomatic_strictly_trimmed.sam
+│   │   └── aln_trimmomatic_trimmed.sam
+
+Inspect SAM files:
+```bash
+less -S results/bwa_alignments/aln_trimmomatic_strictly_trimmed.sam
+```
+For loop for: converting SAM to binary alignment map file (BAM), sorting BAM (add suffix _sorted.bam) and building index on sorted files (.bai)
+```bash
+for sam in results/bwa_alignments/*.sam; do
+    # basename 
+    base=$(basename "$sam" .sam)
+
+    echo "Processing $base ..."
+
+    # convert SAM format alignment to binary version (BAM format)
+    samtools view -b "$sam" > results/bwa_alignments/${base}.bam 2>> logs/samtools_samtobam_sorting_indexing.log
+
+    # sorting BAM files before indexing
+    samtools sort results/bwa_alignments/${base}.bam \
+        -o results/bwa_alignments/${base}_sorted.bam 2>> logs/samtools_samtobam_sorting_indexing.log
+
+    # indexing BAM
+    samtools index results/bwa_alignments/${base}_sorted.bam 2>> logs/samtools_samtobam_sorting_indexing.log
+
+    echo "$base done." >> logs/samtools_samtobam_sorting_indexing.log
+done
+```
+
+IGV need uncompressed reference genome in FASTA format so I extracted reference from the archive using gunzip.
+Flag -k preserves original fna.gz archive.
+```bash
+gunzip -k raw_data/GCF_000005845.2_ASM584v2_genomic.fna.gz
+```
+
+I decided to check md5 checksum. But the command I used earlier failed.
+```bash
+md5sum -c raw_data/uncompressed_checksums.txt
+```
+
+Checksums for uncompressed files from ncbi is stored in 4 column format.
+(bioinf) ➜  01_prac_ampicillin_resistance git:(master) ✗ cat raw_data/uncompressed_checksums.txt
+#file   md5sum  crc32   size
+./GCF_000005845.2_ASM584v2_ani_contam_ranges.tsv        0feb9ab0ef81aed6d768628d50b119fd        0c012c82        46803
+./GCF_000005845.2_ASM584v2_ani_report.txt       e3cc1640429bfbb576a1328b0b371fff        bb0bd3b6        5812
+./GCF_000005845.2_ASM584v2_assembly_report.txt  5d767338dae878d0d547ca5edb138df3        28f934b1        1207
+./GCF_000005845.2_ASM584v2_cds_from_genomic.fna 113ad98b89cb697e22aae117a1ae1a89        b0a79c52        5043627
+./GCF_000005845.2_ASM584v2_fcs_report.txt       9bd2c1f0b8d87e8b1b7215551c099c17        924e232e        667
+./GCF_000005845.2_ASM584v2_genomic.fna  92c997bcd88e983ffdb21b2712ed3736        f36bbf76        4699745
+./GCF_000005845.2_ASM584v2_genomic.gbff 80edc82b4a5d19198f1eee5a3848fdac        c80a55e4        11882100
+./GCF_000005845.2_ASM584v2_genomic.gff  a7cef966c981b35c5bbf30c3df923312        f5f907ce        2467646
+./GCF_000005845.2_ASM584v2_genomic.gtf  27882704f8ef02338681dcdd2ee6d26b        4bbbd7df        6774966
+./GCF_000005845.2_ASM584v2_protein.faa  4c19a285fd7a4e75ce34a466fcf0607f        25917a05        1750878
+./GCF_000005845.2_ASM584v2_rna_from_genomic.fna fd55823557f1ecb83c3d8939a0e88aea        0796f039        97814
+./GCF_000005845.2_ASM584v2_translated_cds.faa   1d55819ca9d1172f528ff26ccb9687a0        7b546c56        2325398
+
+Commmand to quick check of md5checksums on uncompressed files.
+awk changes the order of hashes and file names to feed md5sum
+tail -n +2 command start printin from the second line and reads input up to the end of file (need to omit headers from 4-column ncbi checksum file)
+```bash
+cd raw_data
+awk '{print $2, $1}' uncompressed_checksums.txt | tail -n +2 | md5sum -c
+cd ..
+```
+
+(bioinf) ➜  raw_data git:(master) ✗ awk '{print $2, $1}' uncompressed_checksums.txt | tail -n +2 | md5sum -c
+md5sum: ./GCF_000005845.2_ASM584v2_ani_contam_ranges.tsv: No such file or directory
+./GCF_000005845.2_ASM584v2_ani_contam_ranges.tsv: FAILED open or read
+md5sum: ./GCF_000005845.2_ASM584v2_ani_report.txt: No such file or directory
+./GCF_000005845.2_ASM584v2_ani_report.txt: FAILED open or read
+md5sum: ./GCF_000005845.2_ASM584v2_assembly_report.txt: No such file or directory
+./GCF_000005845.2_ASM584v2_assembly_report.txt: FAILED open or read
+md5sum: ./GCF_000005845.2_ASM584v2_cds_from_genomic.fna: No such file or directory
+./GCF_000005845.2_ASM584v2_cds_from_genomic.fna: FAILED open or read
+md5sum: ./GCF_000005845.2_ASM584v2_fcs_report.txt: No such file or directory
+./GCF_000005845.2_ASM584v2_fcs_report.txt: FAILED open or read
+./GCF_000005845.2_ASM584v2_genomic.fna: OK
+md5sum: ./GCF_000005845.2_ASM584v2_genomic.gbff: No such file or directory
+./GCF_000005845.2_ASM584v2_genomic.gbff: FAILED open or read
+md5sum: ./GCF_000005845.2_ASM584v2_genomic.gff: No such file or directory
+./GCF_000005845.2_ASM584v2_genomic.gff: FAILED open or read
+md5sum: ./GCF_000005845.2_ASM584v2_genomic.gtf: No such file or directory
+./GCF_000005845.2_ASM584v2_genomic.gtf: FAILED open or read
+md5sum: ./GCF_000005845.2_ASM584v2_protein.faa: No such file or directory
+./GCF_000005845.2_ASM584v2_protein.faa: FAILED open or read
+md5sum: ./GCF_000005845.2_ASM584v2_rna_from_genomic.fna: No such file or directory
+./GCF_000005845.2_ASM584v2_rna_from_genomic.fna: FAILED open or read
+md5sum: ./GCF_000005845.2_ASM584v2_translated_cds.faa: No such file or directory
+./GCF_000005845.2_ASM584v2_translated_cds.faa: FAILED open or read
+md5sum: WARNING: 11 listed files could not be read
+
