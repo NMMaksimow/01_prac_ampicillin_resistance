@@ -15,6 +15,7 @@
 
 # Results - generated during analysis
 # results/
+*.mpileup
 
 # Python
 __pycache__/
