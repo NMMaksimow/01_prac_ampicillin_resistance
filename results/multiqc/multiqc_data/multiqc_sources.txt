@@ -1,0 +1,7 @@
+Module	Section	Sample Name	Source
+FastQC	all_sections	amp_res_1P	/home/nmmak/01_prac_ampicillin_resistance/results/fastqc_trimmomatic_trimmed/amp_res_1P_fastqc.zip
+FastQC	all_sections	amp_res_2P	/home/nmmak/01_prac_ampicillin_resistance/results/fastqc_trimmomatic_trimmed/amp_res_2P_fastqc.zip
+FastQC	all_sections	amp_res_R1	/home/nmmak/01_prac_ampicillin_resistance/results/fastqc/amp_res_R1_fastqc.zip
+FastQC	all_sections	amp_res_R2	/home/nmmak/01_prac_ampicillin_resistance/results/fastqc/amp_res_R2_fastqc.zip
+FastQC	all_sections	amp_res_strictly_1P	/home/nmmak/01_prac_ampicillin_resistance/results/fastqc_trimmomatic_strictly_trimmed/amp_res_strictly_1P_fastqc.zip
+FastQC	all_sections	amp_res_strictly_2P	/home/nmmak/01_prac_ampicillin_resistance/results/fastqc_trimmomatic_strictly_trimmed/amp_res_strictly_2P_fastqc.zip

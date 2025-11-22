@@ -1,0 +1,90 @@
+java.lang.RuntimeException: Cannot find config file 'results/snpeff/snpeff.config'
+
+	at org.snpeff.snpEffect.Config.findConfigFile(Config.java:276)
+	at org.snpeff.snpEffect.Config.init(Config.java:594)
+	at org.snpeff.snpEffect.Config.<init>(Config.java:125)
+	at org.snpeff.SnpEff.loadConfig(SnpEff.java:451)
+	at org.snpeff.snpEffect.commandLine.SnpEffCmdEff.run(SnpEffCmdEff.java:858)
+	at org.snpeff.snpEffect.commandLine.SnpEffCmdEff.run(SnpEffCmdEff.java:844)
+	at org.snpeff.SnpEff.run(SnpEff.java:1175)
+	at org.snpeff.SnpEff.main(SnpEff.java:164)
+java.lang.RuntimeException: Cannot find config file 'results/snpeff/snpeff.config'
+
+	at org.snpeff.snpEffect.Config.findConfigFile(Config.java:276)
+	at org.snpeff.snpEffect.Config.init(Config.java:594)
+	at org.snpeff.snpEffect.Config.<init>(Config.java:125)
+	at org.snpeff.SnpEff.loadConfig(SnpEff.java:451)
+	at org.snpeff.snpEffect.commandLine.SnpEffCmdEff.run(SnpEffCmdEff.java:858)
+	at org.snpeff.snpEffect.commandLine.SnpEffCmdEff.run(SnpEffCmdEff.java:844)
+	at org.snpeff.SnpEff.run(SnpEff.java:1175)
+	at org.snpeff.SnpEff.main(SnpEff.java:164)
+java.lang.RuntimeException: Cannot find config file 'results/snpeff/snpeff.config'
+
+	at org.snpeff.snpEffect.Config.findConfigFile(Config.java:276)
+	at org.snpeff.snpEffect.Config.init(Config.java:594)
+	at org.snpeff.snpEffect.Config.<init>(Config.java:125)
+	at org.snpeff.SnpEff.loadConfig(SnpEff.java:451)
+	at org.snpeff.snpEffect.commandLine.SnpEffCmdEff.run(SnpEffCmdEff.java:858)
+	at org.snpeff.snpEffect.commandLine.SnpEffCmdEff.run(SnpEffCmdEff.java:844)
+	at org.snpeff.SnpEff.run(SnpEff.java:1175)
+	at org.snpeff.SnpEff.main(SnpEff.java:164)
+java.lang.RuntimeException: Cannot find config file 'results/snpEff/snpeff.config'
+
+	at org.snpeff.snpEffect.Config.findConfigFile(Config.java:276)
+	at org.snpeff.snpEffect.Config.init(Config.java:594)
+	at org.snpeff.snpEffect.Config.<init>(Config.java:125)
+	at org.snpeff.SnpEff.loadConfig(SnpEff.java:451)
+	at org.snpeff.snpEffect.commandLine.SnpEffCmdEff.run(SnpEffCmdEff.java:858)
+	at org.snpeff.snpEffect.commandLine.SnpEffCmdEff.run(SnpEffCmdEff.java:844)
+	at org.snpeff.SnpEff.run(SnpEff.java:1175)
+	at org.snpeff.SnpEff.main(SnpEff.java:164)
+java.lang.RuntimeException: Cannot find config file 'results/snpEff/snpeff.config'
+
+	at org.snpeff.snpEffect.Config.findConfigFile(Config.java:276)
+	at org.snpeff.snpEffect.Config.init(Config.java:594)
+	at org.snpeff.snpEffect.Config.<init>(Config.java:125)
+	at org.snpeff.SnpEff.loadConfig(SnpEff.java:451)
+	at org.snpeff.snpEffect.commandLine.SnpEffCmdEff.run(SnpEffCmdEff.java:858)
+	at org.snpeff.snpEffect.commandLine.SnpEffCmdEff.run(SnpEffCmdEff.java:844)
+	at org.snpeff.SnpEff.run(SnpEff.java:1175)
+	at org.snpeff.SnpEff.main(SnpEff.java:164)
+java.lang.RuntimeException: Cannot find config file 'results/snpEff/snpeff.config'
+
+	at org.snpeff.snpEffect.Config.findConfigFile(Config.java:276)
+	at org.snpeff.snpEffect.Config.init(Config.java:594)
+	at org.snpeff.snpEffect.Config.<init>(Config.java:125)
+	at org.snpeff.SnpEff.loadConfig(SnpEff.java:451)
+	at org.snpeff.snpEffect.commandLine.SnpEffCmdEff.run(SnpEffCmdEff.java:858)
+	at org.snpeff.snpEffect.commandLine.SnpEffCmdEff.run(SnpEffCmdEff.java:844)
+	at org.snpeff.SnpEff.run(SnpEff.java:1175)
+	at org.snpeff.SnpEff.main(SnpEff.java:164)
+java.lang.RuntimeException: Cannot find config file 'results/snpEff/snpeff.config'
+
+	at org.snpeff.snpEffect.Config.findConfigFile(Config.java:276)
+	at org.snpeff.snpEffect.Config.init(Config.java:594)
+	at org.snpeff.snpEffect.Config.<init>(Config.java:125)
+	at org.snpeff.SnpEff.loadConfig(SnpEff.java:451)
+	at org.snpeff.snpEffect.commandLine.SnpEffCmdEff.run(SnpEffCmdEff.java:858)
+	at org.snpeff.snpEffect.commandLine.SnpEffCmdEff.run(SnpEffCmdEff.java:844)
+	at org.snpeff.SnpEff.run(SnpEff.java:1175)
+	at org.snpeff.SnpEff.main(SnpEff.java:164)
+java.lang.RuntimeException: Cannot find config file 'results/snpEff/snpeff.config'
+
+	at org.snpeff.snpEffect.Config.findConfigFile(Config.java:276)
+	at org.snpeff.snpEffect.Config.init(Config.java:594)
+	at org.snpeff.snpEffect.Config.<init>(Config.java:125)
+	at org.snpeff.SnpEff.loadConfig(SnpEff.java:451)
+	at org.snpeff.snpEffect.commandLine.SnpEffCmdEff.run(SnpEffCmdEff.java:858)
+	at org.snpeff.snpEffect.commandLine.SnpEffCmdEff.run(SnpEffCmdEff.java:844)
+	at org.snpeff.SnpEff.run(SnpEff.java:1175)
+	at org.snpeff.SnpEff.main(SnpEff.java:164)
+java.lang.RuntimeException: Cannot find config file 'results/snpEff/snpeff.config'
+
+	at org.snpeff.snpEffect.Config.findConfigFile(Config.java:276)
+	at org.snpeff.snpEffect.Config.init(Config.java:594)
+	at org.snpeff.snpEffect.Config.<init>(Config.java:125)
+	at org.snpeff.SnpEff.loadConfig(SnpEff.java:451)
+	at org.snpeff.snpEffect.commandLine.SnpEffCmdEff.run(SnpEffCmdEff.java:858)
+	at org.snpeff.snpEffect.commandLine.SnpEffCmdEff.run(SnpEffCmdEff.java:844)
+	at org.snpeff.SnpEff.run(SnpEff.java:1175)
+	at org.snpeff.SnpEff.main(SnpEff.java:164)

@@ -1,0 +1,7 @@
+Sample	Unique Reads	Duplicate Reads
+amp_res_1P	403970.0	42289.0
+amp_res_2P	403100.0	43159.0
+amp_res_R1	411240.0	44636.0
+amp_res_R2	410143.0	45733.0
+amp_res_strictly_1P	347196.0	29144.0
+amp_res_strictly_2P	347578.0	28762.0

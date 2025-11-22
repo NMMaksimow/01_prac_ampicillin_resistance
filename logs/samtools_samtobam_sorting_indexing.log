@@ -1,0 +1,21 @@
+[main_samview] fail to read the header from "results/bwa_alignments/aln_fastp.sam".
+[W::hts_set_opt] Cannot change block size for this format
+samtools sort: failed to read header from "results/bwa_alignments/aln_fastp.bam"
+[E::hts_open_format] Failed to open file "results/bwa_alignments/aln_fastp_sorted.bam" : No such file or directory
+samtools index: failed to open "results/bwa_alignments/aln_fastp_sorted.bam": No such file or directory
+aln_fastp done.
+[main_samview] fail to read the header from "results/bwa_alignments/aln_trimmomatic_strictly_trimmed.sam".
+[W::hts_set_opt] Cannot change block size for this format
+samtools sort: failed to read header from "results/bwa_alignments/aln_trimmomatic_strictly_trimmed.bam"
+[E::hts_open_format] Failed to open file "results/bwa_alignments/aln_trimmomatic_strictly_trimmed_sorted.bam" : No such file or directory
+samtools index: failed to open "results/bwa_alignments/aln_trimmomatic_strictly_trimmed_sorted.bam": No such file or directory
+aln_trimmomatic_strictly_trimmed done.
+[main_samview] fail to read the header from "results/bwa_alignments/aln_trimmomatic_trimmed.sam".
+[W::hts_set_opt] Cannot change block size for this format
+samtools sort: failed to read header from "results/bwa_alignments/aln_trimmomatic_trimmed.bam"
+[E::hts_open_format] Failed to open file "results/bwa_alignments/aln_trimmomatic_trimmed_sorted.bam" : No such file or directory
+samtools index: failed to open "results/bwa_alignments/aln_trimmomatic_trimmed_sorted.bam": No such file or directory
+aln_trimmomatic_trimmed done.
+aln_fastp done.
+aln_trimmomatic_strictly_trimmed done.
+aln_trimmomatic_trimmed done.

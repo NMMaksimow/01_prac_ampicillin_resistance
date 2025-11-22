@@ -1,0 +1,53 @@
+Detecting adapter sequence for read1...
+>I7_Nextera_Transposase_1 | >Trans2_rc | >I7_Nextera_Transposase_1 | >Trans2_rc
+CTGTCTCTTATACACATCTCCGAGCCCACGAGAC
+
+Detecting adapter sequence for read2...
+>I5_Nextera_Transposase_1 | >Trans1_rc | >I5_Nextera_Transposase_1 | >Trans1_rc
+CTGTCTCTTATACACATCTGACGCTGCCGACGA
+
+Read1 before filtering:
+total reads: 455876
+total bases: 46043476
+Q20 bases: 42272630(91.8102%)
+Q30 bases: 37609206(81.6819%)
+Q40 bases: 8820105(19.156%)
+
+Read2 before filtering:
+total reads: 455876
+total bases: 46043476
+Q20 bases: 41747132(90.6689%)
+Q30 bases: 37288312(80.985%)
+Q40 bases: 8362452(18.1621%)
+
+Read1 after filtering:
+total reads: 380531
+total bases: 37932224
+Q20 bases: 36462311(96.1249%)
+Q30 bases: 33145793(87.3816%)
+Q40 bases: 8376221(22.0821%)
+
+Read2 after filtering:
+total reads: 380531
+total bases: 37931611
+Q20 bases: 36602672(96.4965%)
+Q30 bases: 33460909(88.2138%)
+Q40 bases: 8030774(21.1717%)
+
+Filtering result:
+reads passed filter: 761062
+reads failed due to low quality: 146248
+reads failed due to too many N: 318
+reads failed due to too short: 4124
+reads with adapter trimmed: 61255
+bases trimmed due to adapters: 1316258
+
+Duplication rate: 0.17066%
+
+Insert size peak (evaluated by paired-end reads): 165
+
+JSON report: results/fastp_trimmed/fastp_amp_res.json
+HTML report: results/fastp_trimmed/fastp_amp_res.html
+
+fastp -i raw_data/amp_res_R1.fastq.gz -I raw_data/amp_res_R2.fastq.gz -o results/fastp_trimmed/amp_res_R1_trimmed.fastq.gz -O results/fastp_trimmed/amp_res_R2_trimmed.fastq.gz -q 20 -u 25 -n 5 -l 50 --detect_adapter_for_pe --html results/fastp_trimmed/fastp_amp_res.html --json results/fastp_trimmed/fastp_amp_res.json 
+fastp v1.0.1, time used: 12 seconds

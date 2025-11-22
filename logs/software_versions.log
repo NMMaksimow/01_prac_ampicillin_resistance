@@ -1,0 +1,72 @@
+Environment freeze for E. coli ampicillin resistance project - Tue Nov 11 19:51:34 GMT 2025
+Python version:
+Python 3.13.2
+
+mamba version:
+2.3.3
+
+bwa version:
+Program: bwa (alignment via Burrows-Wheeler transformation)
+  [Warning] bwa not found or failed to report version.
+
+samtools version:
+samtools 1.22.1
+
+fastqc version:
+FastQC v0.12.1
+
+fastp version:
+fastp 1.0.1
+
+Trimmomatic version:
+0.40
+
+seqkit version:
+seqkit v2.10.1
+
+varscan version:
+/home/nmmak/miniforge3/envs/bioinf/bin/varscan: line 6: warning: setlocale: LC_ALL: cannot change locale (en_US.UTF-8): No such file or directory
+Command not recognized
+VarScan v2.4.6
+
+***NON-COMMERCIAL VERSION***
+
+USAGE: java -jar VarScan.jar [COMMAND] [OPTIONS] 
+
+COMMANDS:
+	pileup2snp		Identify SNPs from a pileup file
+	pileup2indel		Identify indels a pileup file
+	pileup2cns		Call consensus and variants from a pileup file
+	mpileup2snp		Identify SNPs from an mpileup file
+	mpileup2indel		Identify indels an mpileup file
+	mpileup2cns		Call consensus and variants from an mpileup file
+
+	somatic			Call germline/somatic variants from tumor-normal pileups
+	mpileup2somatic		Call germline/somatic variants in multi-tumor-normal mpileup (beta feature in v2.4.5)
+	copynumber		Determine relative tumor copy number from tumor-normal pileups
+	readcounts		Obtain read counts for a list of variants from a pileup file
+
+	filter			Filter SNPs by coverage, frequency, p-value, etc.
+	somaticFilter		Filter somatic variants for clusters/indels
+	fpfilter		Apply the false-positive filter
+
+	processSomatic		Isolate Germline/LOH/Somatic calls from output
+	copyCaller		GC-adjust and process copy number changes from VarScan copynumber output
+	compare			Compare two lists of positions/variants
+	limit			Restrict pileup/snps/indels to ROI positions
+
+
+  [Warning] varscan not found or failed to report version.
+
+snpEff version:
+SnpEff	5.3a	2025-09-02
+
+git version:
+git version 2.43.0
+
+wget version:
+GNU Wget 1.21.4 built on linux-gnu.
+
+gzip version:
+gzip 1.12
+

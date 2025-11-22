@@ -11,10 +11,10 @@
 *.fai
 
 # Logs - generated files
-logs/
+# logs/
 
 # Results - generated during analysis
-results/
+# results/
 
 # Python
 __pycache__/

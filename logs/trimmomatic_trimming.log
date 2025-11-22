@@ -1,0 +1,5 @@
+TrimmomaticPE: Started with arguments:
+ -threads 4 -phred33 raw_data/amp_res_R1.fastq.gz raw_data/amp_res_R2.fastq.gz -baseout results/trimmomatic_trimmed/amp_res.fastq.gz LEADING:20 TRAILING:20 SLIDINGWINDOW:10:20 MINLEN:20
+Using templated Output files: results/trimmomatic_trimmed/amp_res_1P.fastq.gz results/trimmomatic_trimmed/amp_res_1U.fastq.gz results/trimmomatic_trimmed/amp_res_2P.fastq.gz results/trimmomatic_trimmed/amp_res_2U.fastq.gz
+Input Read Pairs: 455876 Both Surviving: 446259 (97.89%) Forward Only Surviving: 9216 (2.02%) Reverse Only Surviving: 273 (0.06%) Dropped: 128 (0.03%)
+TrimmomaticPE: Completed successfully

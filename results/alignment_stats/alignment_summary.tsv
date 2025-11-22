@@ -1,0 +1,4 @@
+sample	total_reads	mapped_reads	properly_paired	percent_mapped	percent_proper	mean_depth	avg_MAPQ
+aln_fastp	761312	761286	760000	100.00	99.83	16.3369	58.84
+aln_trimmomatic_strictly_trimmed	752818	752200	750112	99.92	99.64	13.4067	58.68
+aln_trimmomatic_trimmed	892776	891649	888554	99.87	99.53	17.78	58.71
