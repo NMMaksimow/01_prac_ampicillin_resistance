@@ -3,7 +3,12 @@
 # Project: Identification of ampicillin-resistance mechanism in E. coli
 # Goal: Identify mutations conferring ampicillin resistance by comparing resistant strain to reference genome
 ----
-## 2025-10-11 - Project setup and data download
+
+################################################################
+################ 10/11/2025 ####################################
+################################################################
+
+## 10-11-2025 Project setup and data download
 # ---- Antibiotic resistance in E. coli ----
 ## ---- 00_Set up the project directory ----
 # activate environment
@@ -802,3 +807,224 @@ done
 grep "ANN=" results/variant_calling/varscan_res_aln_fastp_annotated.vcf \
   | sed 's/.*ANN=//' | cut -d'|' -f4 | sort | uniq -c
 ```
+
+(bioinf) ➜  01_prac_ampicillin_resistance git:(master) ✗ grep "ANN=" results/variant_calling/varscan_res_aln_fastp_annotated.vcf \
+  | sed 's/.*ANN=//' | cut -d'|' -f4 | sort | uniq -c
+
+      1 acrB
+      1 envZ
+      1 ftsI
+      1 glnH
+      1 mntP
+      1 rsgA
+	  
+################################################################
+################ 11/11/2025 ####################################
+################################################################
+
+# ============================================================
+# ============================================================
+
+#!/usr/bin/env bash
+# ============================================================
+# 00_check_software_versions.sh
+# Logs versions of all bioinformatics tools used in the pipeline
+# ============================================================
+
+set -euo pipefail
+trap 'echo "Error at line $LINENO in $0" >&2' ERR
+
+# --- Setup ---
+LOG_DIR="logs"
+mkdir -p "$LOG_DIR"
+LOG_FILE="${LOG_DIR}/software_versions.log"
+
+echo "Environment freeze for E. coli ampicillin resistance project - $(date)" > "$LOG_FILE"
+
+# --- Helper function ---
+log_version() {
+    local name="$1"
+    local cmd="$2"
+    echo "${name} version:" >> "$LOG_FILE"
+    if eval "$cmd" >> "$LOG_FILE" 2>&1; then
+        echo "" >> "$LOG_FILE"
+    else
+        echo "  [Warning] ${name} not found or failed to report version." >> "$LOG_FILE"
+        echo "" >> "$LOG_FILE"
+    fi
+}
+
+# --- Core Tools ---
+log_version "Python" "python --version"
+log_version "mamba" "mamba --version"
+log_version "bwa" "bwa 2>&1 | grep -m1 'Program'"
+log_version "samtools" "samtools --version | head -n1"
+log_version "fastqc" "fastqc --version"
+log_version "fastp" "fastp --version"
+log_version "Trimmomatic" "trimmomatic -version"
+log_version "seqkit" "seqkit version 2>&1 | head -n1"
+log_version "varscan" "varscan --help | grep -m1 'VarScan'"
+log_version "snpEff" "snpEff -version 2>&1 | head -n1"
+
+# --- Optional dependencies ---
+log_version "git" "git --version"
+log_version "wget" "wget --version | head -n1"
+log_version "gzip" "gzip --version | head -n1"
+
+echo "Software version logging complete."
+echo "Log saved to: ${LOG_FILE}"
+# ============================================================
+
+#######################################
+
+(base) ➜  01_prac_ampicillin_resistance git:(master) ✗ tree .
+.
+├── 01_lab_journal_nm.txt
+├── README.md
+├── logs
+│   ├── bwa_index.log
+│   ├── bwa_mem_fastp.log
+│   ├── bwa_mem_trimmomatic.log
+│   ├── bwa_mem_trimmomatic_strictly.log
+│   ├── data_downloading.log
+│   ├── fastp_trimming.log
+│   ├── fastqc.log
+│   ├── fastqc_fastp_trimmed.log
+│   ├── fastqc_trimmomatic_strictrly_trimmed.log
+│   ├── fastqc_trimmomatic_trimmed.log
+│   ├── gbff_download.log
+│   ├── md5_check.log
+│   ├── samtools_mpileup.log
+│   ├── samtools_samtobam_sorting_indexing.log
+│   ├── snpEff_annotation.log
+│   ├── snpEff_build.log
+│   ├── software_versions.log
+│   ├── trimmomatic_strict_trimming.log
+│   ├── trimmomatic_trimming.log
+│   └── varscan_mpileup2snp.log
+├── raw_data
+│   ├── GCF_000005845.2_ASM584v2_genomic.fna
+│   ├── GCF_000005845.2_ASM584v2_genomic.fna.fai
+│   ├── GCF_000005845.2_ASM584v2_genomic.fna.gz
+│   ├── GCF_000005845.2_ASM584v2_genomic.fna.gz.amb
+│   ├── GCF_000005845.2_ASM584v2_genomic.fna.gz.ann
+│   ├── GCF_000005845.2_ASM584v2_genomic.fna.gz.bwt
+│   ├── GCF_000005845.2_ASM584v2_genomic.fna.gz.pac
+│   ├── GCF_000005845.2_ASM584v2_genomic.fna.gz.sa
+│   ├── GCF_000005845.2_ASM584v2_genomic.gff.gz
+│   ├── amp_res_R1.fastq.gz
+│   ├── amp_res_R2.fastq.gz
+│   ├── md5checksums.txt
+│   ├── md5checksums_amp_res_reads.txt
+│   └── uncompressed_checksums.txt
+├── results
+│   ├── alignment_stats
+│   │   ├── alignment_summary.tsv
+│   │   ├── aln_fastp_flagstat.txt
+│   │   ├── aln_fastp_idxstats.txt
+│   │   ├── aln_trimmomatic_strictly_trimmed_flagstat.txt
+│   │   ├── aln_trimmomatic_strictly_trimmed_idxstats.txt
+│   │   ├── aln_trimmomatic_trimmed_flagstat.txt
+│   │   └── aln_trimmomatic_trimmed_idxstats.txt
+│   ├── bwa_alignments
+│   │   ├── aln_fastp.bam
+│   │   ├── aln_fastp.sam
+│   │   ├── aln_fastp_sorted.bam
+│   │   ├── aln_fastp_sorted.bam.bai
+│   │   ├── aln_trimmomatic_strictly_trimmed.bam
+│   │   ├── aln_trimmomatic_strictly_trimmed.sam
+│   │   ├── aln_trimmomatic_strictly_trimmed_sorted.bam
+│   │   ├── aln_trimmomatic_strictly_trimmed_sorted.bam.bai
+│   │   ├── aln_trimmomatic_trimmed.bam
+│   │   ├── aln_trimmomatic_trimmed.sam
+│   │   ├── aln_trimmomatic_trimmed_sorted.bam
+│   │   └── aln_trimmomatic_trimmed_sorted.bam.bai
+│   ├── fastp_trimmed
+│   │   ├── amp_res_R1_trimmed.fastq.gz
+│   │   ├── amp_res_R2_trimmed.fastq.gz
+│   │   ├── fastp_amp_res.html
+│   │   └── fastp_amp_res.json
+│   ├── fastqc
+│   │   ├── amp_res_R1_fastqc.html
+│   │   ├── amp_res_R1_fastqc.zip
+│   │   ├── amp_res_R2_fastqc.html
+│   │   └── amp_res_R2_fastqc.zip
+│   ├── fastqc_fastp_trimmed
+│   │   ├── amp_res_R1_trimmed_fastqc.html
+│   │   ├── amp_res_R1_trimmed_fastqc.zip
+│   │   ├── amp_res_R2_trimmed_fastqc.html
+│   │   └── amp_res_R2_trimmed_fastqc.zip
+│   ├── fastqc_trimmomatic_strictly_trimmed
+│   │   ├── amp_res_strictly_1P_fastqc.html
+│   │   ├── amp_res_strictly_1P_fastqc.zip
+│   │   ├── amp_res_strictly_2P_fastqc.html
+│   │   └── amp_res_strictly_2P_fastqc.zip
+│   ├── fastqc_trimmomatic_trimmed
+│   │   ├── amp_res_1P_fastqc.html
+│   │   ├── amp_res_1P_fastqc.zip
+│   │   ├── amp_res_2P_fastqc.html
+│   │   └── amp_res_2P_fastqc.zip
+│   ├── snpEff
+│   │   ├── data
+│   │   │   └── k12
+│   │   │       ├── genes.gbk
+│   │   │       ├── sequence.NC_000913.3.bin
+│   │   │       └── snpEffectPredictor.bin
+│   │   └── snpEff.config
+│   ├── trimmomatic_strictly_trimmed
+│   │   ├── amp_res_strictly_1P.fastq.gz
+│   │   ├── amp_res_strictly_1U.fastq.gz
+│   │   ├── amp_res_strictly_2P.fastq.gz
+│   │   └── amp_res_strictly_2U.fastq.gz
+│   ├── trimmomatic_trimmed
+│   │   ├── amp_res_1P.fastq.gz
+│   │   ├── amp_res_1U.fastq.gz
+│   │   ├── amp_res_2P.fastq.gz
+│   │   └── amp_res_2U.fastq.gz
+│   └── variant_calling
+│       ├── aln_fastp.mpileup
+│       ├── aln_trimmomatic_strictly_trimmed.mpileup
+│       ├── aln_trimmomatic_trimmed.mpileup
+│       ├── varscan_res_aln_fastp.vcf
+│       ├── varscan_res_aln_fastp_annotated.vcf
+│       ├── varscan_res_aln_trimmomatic_strictly_trimmed.vcf
+│       ├── varscan_res_aln_trimmomatic_strictly_trimmed_annotated.vcf
+│       ├── varscan_res_aln_trimmomatic_trimmed.vcf
+│       └── varscan_res_aln_trimmomatic_trimmed_annotated.vcf
+├── scripts
+│   ├── 01_downloading_raw_data_md5_check.sh
+│   └── 02_collecting_aln_stats.sh
+├── snpEff_genes.txt
+└── snpEff_summary.html
+
+18 directories, 100 files
+
+
+
+################################################################
+################ 13/11/2025 ####################################
+################################################################
+
+I tried to install MultiQC to bioinf environment, but that didn't work out.
+MultiQC requires Python 3.11 and it doesn't support my curren Python 3.13.
+
+```bash
+mamba install -c bioconda multiqc 
+```
+(bioinf) ➜  01_prac_ampicillin_resistance git:(master) ✗ mamba install -c bioconda multiqc
+warning  libmamba 'repo.anaconda.com', a commercial channel hosted by Anaconda.com, is used.
+...
+    └─ pin on python =3.13 * is not installable because it requires
+       └─ python =3.13 *, which conflicts with any installable versions previously reported.
+critical libmamba Could not solve for environment specs
+
+To shortcut it, I installed MultiQC to its own mamba environment.
+```bash
+mamba create -n multiqc -c conda-forge -c bioconda python=3.11 multiqc
+```
+
+(bioinf) ➜  01_prac_ampicillin_resistance git:(master) ✗ mamba activate multiqc
+(multiqc) ➜  01_prac_ampicillin_resistance git:(master) ✗ multiqc --version
+multiqc, version 1.32
+
+For some reason MultiQC don't see part of my fastqc reports. I dropped work with MultiQC for now.
