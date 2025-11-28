@@ -4,8 +4,8 @@
 # Goal: Identify mutations conferring ampicillin resistance by comparing resistant strain to reference genome
 ----
 
-## :calendar: 10 November 2025
-
+#### :calendar: 10 November 2025
+### Project seting up project directory, downloading data, checking MD5 checksums and inspecing files
 <details>
 <summary>Basic commands to activate mamba environment, set up directory tree for the project, inititate git and create .gitignore</summary>
 
@@ -54,7 +54,7 @@ EOF
 
 After set up I made an initial Git commit.
 
-Programmatic download of reference genome, its annotat and MD5 checksums were straightforward with wget command. Download of read files using wget were a bit dodgy because of access to figshare (403 Forbidden).
+Programmatic download of reference genome, its annotation and MD5 checksums were straightforward with `wget` command. Download of read files using wget were a bit dodgy because of access to figshare (403 Forbidden).
 
 First I thought it's a connection issue and used these commands for interactive check it.
 
@@ -63,7 +63,7 @@ wget --spider https://figshare.com/ndownloader/files/23769689
 wget --spider https://figshare.com/ndownloader/files/23769692
 ```
 
-Then I understood that Figshare blocks programmatic access and shortcut it using --user-agent flag for wget (in script below). To check MD5 checksum I used md5checksums.txt (for reference genome and annotation) and created md5checksums_amp_res_reads.txt from MD5 on Figshare (for reads). I used grep (with -E option for Extended RegEx) to filter only downloaded files from others present on ncbi (use backslash to escape the dot: \. matches a literal period, not "any character" as in regex). 
+Then I figured it out that Figshare blocks programmatic access and work around it using `--user-agent` option for wget (in script below). To check MD5 checksum I used md5checksums.txt (for reference genome and annotation) and created md5checksums_amp_res_reads.txt from MD5 on Figshare (for reads). I used `grep` (with -E flag for Extended RegEx) to filter only downloaded files from others present on ncbi (use backslash to escape the dot: \. matches a literal period, not "any character" as in regex). 
 
 Full script: [`scripts/01_downloading_raw_data_md5_check.sh`](scripts/01_downloading_raw_data_md5_check.sh)
 
@@ -150,7 +150,7 @@ zcat raw_data/GCF_000005845.2_ASM584v2_genomic.fna.gz | grep -E "^>" | wc -l
 # Output: 1
 ```
 
-To calculate reference genome size in bp I used pipe of zcat, grep (to filter the header of), transliterate with delete option (to get rid of newline character) and wordcount with character option. The reference genome size is 4,641,652 bp (4,6 Mb).
+To calculate reference genome size in basepairs I used pipe of zcat, grep (to filter the header of), transliterate with delete option (to get rid of newline character) and wordcount with character option. The reference genome size is 4,641,652 bp (4,6 Mb).
 The sanity check is passed. *E. coli* genomes size vary: 4,5 — 5.5 Mb, depending on strain. K-12 is a lab strain that might expirienced size reduction being passed in lab environmnet for miriads of generations. :white_check_mark:
 
 ```bash
@@ -196,7 +196,7 @@ GFF3 starts with header lines (marked with #) and then the body consists tab-sep
 - `attributes` — Semicolon-separated key=value pairs
 
 
-I used zcat, grep and wordcount to calcultate all entries in GFF genome annotation. I used invert match option (-v "^#") to remove header lines in annotation before counting.
+I used zcat, grep and wordcount to count all entries in GFF genome annotation. I used invert match option (-v "^#") to remove header lines in annotation before counting.
 
 ```bash
 zcat raw_data/GCF_000005845.2_ASM584v2_genomic.gff.gz | grep -v "^#" | wc -l
@@ -214,14 +214,16 @@ zcat raw_data/GCF_000005845.2_ASM584v2_genomic.gff.gz | wc -l
 ```
 </details>
 
-To further explore GFF annotation I used zcat, grep, cut, sort, wc pipe to examine the unique feature types (the third column). I used option field (-f3) to specify third column for cut command. There're 11 unique features in reference annotation.
+To further explore GFF annotation I used zcat, grep, cut, sort, wc pipe to examine the unique feature types (the third column). I used option field (-f3) to specify third column for cut command. There are 11 unique features in reference annotation.
+
 ```bash
 zcat raw_data/GCF_000005845.2_ASM584v2_genomic.gff.gz| grep -v "^#" | cut -f3 | sort -u | wc -l
 
 # Output: 11
 ```
 
-To list features in annotation I combined zcat, grep, cut, sort and uniq with count flag (-c):
+To list features in annotation I combined zcat, grep, cut, sort and uniq with count flag (-c).
+
 ```bash
 zcat raw_data/GCF_000005845.2_ASM584v2_genomic.gff.gz | grep -v "^#" | cut -f3 | sort | uniq -c
 
@@ -239,88 +241,80 @@ zcat raw_data/GCF_000005845.2_ASM584v2_genomic.gff.gz | grep -v "^#" | cut -f3 |
 #     86 tRNA
 ```
 
-I used wc -l command to count lines and then divideby 4 to count read number in FASTQ raw files.
-There're 455,876 of forward (R1) and reverse (R2) reads.
+To count R1 and R2 reads in FASTQ archives I used pipe of zcat, wc, awk commands. I divided the wordcount output by 4. Each read is represented by 4 lines: header, sequence, plus placeholder, quality control. There are 455,876 of forward (R1) and reverse (R2) reads. All reads are paired.
 
 ```bash
-zcat raw_data/amp_res_R1.fastq.gz | wc -l | awk '{print $1/4}' \
+zcat raw_data/amp_res_R1.fastq.gz | wc -l | awk '{print $1/4}'
+
+# Output: 455876
 zcat raw_data/amp_res_R2.fastq.gz | wc -l | awk '{print $1/4}'
+
+# Output: 455876
 ```
 
-(bioinf) ➜  01_prac_ampicillin_resistance git:(master) ✗ zcat raw_data/amp_res_R1.fastq.gz | wc -l | awk '{print $1/4}'
-455876
-(bioinf) ➜  01_prac_ampicillin_resistance git:(master) ✗ zcat raw_data/amp_res_R2.fastq.gz | wc -l | awk '{print $1/4}'
-455876
+I used seqkit to collect summary statistics on FASTA and FASTQ files. I installed seqkit to bioinf environment using mamba, specifying bioconda channel with option -c. 
 
-Use seqkit for statistics on FASTA and FASTQ files.
 ```bash
 mamba install -c bioconda seqkit
 ```
 
-# reference genome check
+I run seqkit on FASTA genome reference. The seqkit output corroborated manual check. The FASTA file has only one ≈4,6 Mb contig (circular bacterial chromosome).
+
 ```bash
 seqkit stats raw_data/GCF_000005845.2_ASM584v2_genomic.fna.gz
-```
-(bioinf) ➜  01_prac_ampicillin_resistance git:(master) ✗ seqkit stats raw_data/GCF_000005845.2_ASM584v2_genomic.fna.gz
-file                                              format  type  num_seqs    sum_len    min_len    avg_len    max_len
-raw_data/GCF_000005845.2_ASM584v2_genomic.fna.gz  FASTA   DNA          1  4,641,652  4,641,652  4,641,652  4,641,652
 
-# read files check
+# Output:
+# file                                              format  type  num_seqs    sum_len    min_len    avg_len    max_len
+# raw_data/GCF_000005845.2_ASM584v2_genomic.fna.gz  FASTA   DNA          1  4,641,652  4,641,652  4,641,652  4,641,652
+```
+
+Running seqkit on read FASTQ files also verified results of read counting with in-built commands. All reads have equal length of 101 bp.
+
 ```bash
 seqkit stats raw_data/amp_res_R*.fastq.gz
-```
-(bioinf) ➜  01_prac_ampicillin_resistance git:(master) ✗ seqkit stats raw_data/amp_res_R*.fastq.gz
-processed files:  2 / 2 [======================================] ETA: 0s. done
-file                          format  type  num_seqs     sum_len  min_len  avg_len  max_len
-raw_data/amp_res_R1.fastq.gz  FASTQ   DNA    455,876  46,043,476      101      101      101
-raw_data/amp_res_R2.fastq.gz  FASTQ   DNA    455,876  46,043,476      101      101      101
 
-### ---- 04_Quality control using FastQC ----
-Install FastQC using mamba package manager:
+# file                          format  type  num_seqs     sum_len  min_len  avg_len  max_len
+# raw_data/amp_res_R1.fastq.gz  FASTQ   DNA    455,876  46,043,476      101      101      101
+# raw_data/amp_res_R2.fastq.gz  FASTQ   DNA    455,876  46,043,476      101      101      101
+```
+
+### Quality control using FastQC
+<details>
+<summary> I installed FastQC using mamba package manager.</summary>
+
 ```bash
 mamba install -c bioconda fastqc
 fastqc --version
+
+# Output: FastQC v0.12.1
 ```
-(bioinf) ➜  01_prac_ampicillin_resistance git:(master) fastqc --version
-FastQC v0.12.1
+</details>
 
-
-## Run FastQC on reads to create reports on read quality.
+I performed quality control using FastQC with the following command. I redirected both stdout and stderr to log file.
 ```bash
 mkdir -p results/fastqc
 fastqc raw_data/*.fastq.gz -o results/fastqc &> logs/fastqc.log
 ```
-Reports suggest quality trimming at the end of the reads based on per base sequence quality plot.
+There is a typical to Illumina reads quality drop at the end of the reads.
 
-Total Sequences	455876
-Total Bases	46 Mbp
-Sequences flagged as poor quality	0
-Sequence length	101
-%GC	50
+### Quality-based trimming and post-trimming quality control with FastQC
+#### fastp trimming
+<details>
+<summary>I used fastp for trimming at the beginning, because I had expirience working with it before.</summary>
 
-
-## ---- 05 Quality-based trimming and post-trimming quality control with FastQC ----
-## Using fastp for trimming
-Install fastp for quality trimming:
+I installed fastp using mamba and created directory for trimmed files.
 ```bash
 mamba install -c bioconda fastqc
-fastp --version
-```
-(bioinf) ➜  01_prac_ampicillin_resistance git:(master) ✗ fastp --version
-fastp 1.0.1
 
-```bash
+fastp --version
+
+# Output: fastp 1.0.1
+
 mkdir -p results/fastp_trimmed
 ```
+</details>
 
-Extractions on some options rom fastp --help:
-  -q, --qualified_quality_phred        the quality value that a base is qualified. Default 15 means phred quality >=Q15 is qualified. (int [=15])
-  -u, --unqualified_percent_limit      how many percents of bases are allowed to be unqualified (0~100). Default 40 means 40% (int [=40])
-  -n, --n_base_limit                   if one read's number of N base is >n_base_limit, then this read/pair is discarded. Default is 5 (int [=5])
-  -l, --length_required                reads shorter than length_required will be discarded, default is 15. (int [=15])
-  -2, --detect_adapter_for_pe          enable adapter detection for PE data to get ultra-clean data. It takes more time to find just a little bit more adapters.
-  -j, --json                           the json format report file name (string [=fastp.json])
-  -h, --html                           the html format report file name (string [=fastp.html])
+After inspecting per base sequence quality plots I run fastp using the following flags and options. It was pretty relaxed trimming with >=20 quality threshold (option `-q`, `--qualified_quality_phred`), 25% of bases are allowed to be unqualified (option `-u`, `--unqualified_percent_limit`). All reads with >5 N bases were discarded (option `-n`, `--n_base_limit`). All reads shorter than 50 bp were discarded (option `-l`, `--length_required`). I used flag `--detect_adapter_for_pe`. I generated JSON and HTML repots. I redirected stderr to the same log file where stdout was written.
 
 ```bash
 fastp \
@@ -335,28 +329,30 @@ fastp \
   > logs/fastp_trimming.log 2>&1
 ```
 
-FastQC after trimming with fastp:
+After trimming with fastp I run fastqc on trimmed files using the following command.
 ```bash
 mkdir -p results/fastqc_fastp_trimmed
 fastqc results/fastp_trimmed/*.fastq.gz -o results/fastqc_fastp_trimmed &> logs/fastqc_fastp_trimmed.log
 ```
 
-The number of trimmed sequences is equal for _R1 and _R2 read fastq.gz.
-380531 reads passed the filter.
+The number of trimmed sequences is equal for _R1 and _R2 (all paired): 380,531 reads passed the filter.
 
-## Using trimmomatic for trimming
-Install trimmomatic
+#### trimmomatic relaxed trimming
+
+<details>
+<summary>I installed trimmomatic in the bioinf environment and created directory for output files.</summary>
+
 ```bash
 mamba install -c bioconda Trimmomatic
 trimmomatic -version
-```
-(bioinf) ➜  01_prac_ampicillin_resistance git:(master) ✗ trimmomatic -version
-0.40
 
-```bash
+# Output: 0.40
+
 mkdir -p results/trimmomatic_trimmed
 ```
-Option -phred33 because html FastQC report says: Encoding	Sanger / Illumina 1.9.
+</details>
+
+To run trimmomatic I used flags PE (for paired end reads) and `-phred33` to specify QS encoding, because FastQC reports specify Illumina machine: "Encoding	Sanger / Illumina 1.9". Trimmomatic output 4 files: unpaired reads (_1U and _2U) and paired reads that passed filter (_1P and _2P). LEADING:20 — trim bases from the start of a read if quality < 20. TRAILING:20 — trim bases from the end of a read if quality < 20. SLIDINGWINDOW:10:20 — scan with a 10-bp window, cut when average quality drops below 20. MINLEN:20 — discard reads shorter than 20 bp after trimming.
 
 ```bash
 trimmomatic PE -threads 4 -phred33 \
@@ -365,19 +361,18 @@ trimmomatic PE -threads 4 -phred33 \
   LEADING:20 TRAILING:20 SLIDINGWINDOW:10:20 MINLEN:20 \
   > logs/trimmomatic_trimming.log 2>&1
  ```
-FastQC on paired fastq files after trimming with trimmomatic:
+
+Adter trimming using trimmomatic I run FastQC on trimmed files.
 ```bash
 mkdir -p results/fastqc_trimmomatic_trimmed
 fastqc results/trimmomatic_trimmed/*P.fastq.gz -o results/fastqc_trimmomatic_trimmed &> logs/fastqc_trimmomatic_trimmed.log
 ```
  
-## Trimmomatic for more strict trimming
-Here QS for trimming is 30.
+#### trimmomatic strict trimming
+For strict trimming I rise quality thresholds to 30. 
 ```bash
 mkdir -p results/trimmomatic_strictly_trimmed
-```
 
-```bash
 trimmomatic PE -threads 4 -phred33 \
   raw_data/amp_res_R1.fastq.gz raw_data/amp_res_R2.fastq.gz \
   -baseout results/trimmomatic_strictly_trimmed/amp_res_strictly.fastq.gz \
@@ -391,7 +386,7 @@ mkdir -p results/fastqc_trimmomatic_strictly_trimmed
 fastqc results/trimmomatic_strictly_trimmed/*P.fastq.gz -o results/fastqc_trimmomatic_strictly_trimmed &> logs/fastqc_trimmomatic_strictrly_trimmed.log
 ```
 
-## ---- 05 Alignment and mapping ----
+### Alignment and mapping
 bwa already exists in the environment, so there's no need for installation
 
 Creating index for reference genome using bwa index command:
