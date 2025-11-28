@@ -85,8 +85,12 @@ Download and MD5 verification completed successfully!
 
 I performed Git commit after downloading data and its integrity.
 
+I adore tree command to check the project directory structure, it's very visual. I'll try not to use it too much.
+```bash
+tree .
+```
 
-(bioinf) ➜  01_prac_ampicillin_resistance git:(master) tree .
+```
 .
 ├── 01_lab_journal_nm.txt
 ├── README.md
@@ -106,14 +110,15 @@ I performed Git commit after downloading data and its integrity.
     └── 01_downloading_raw_data_md5_check.sh
 
 5 directories, 12 files
+```
 
-## ---- 03_Verify_the_data_formats_and_data_inspection ----
-**Reference genome (FASTA format):**
-Use head to verify reference genome fna.gz data format:
+I used zcat and head commands to verify reference genome fna.gz data format.
 ```bash
 zcat raw_data/GCF_000005845.2_ASM584v2_genomic.fna.gz | head -20
 ```
-(bioinf) ➜  01_prac_ampicillin_resistance git:(master) ✗ zcat raw_data/GCF_000005845.2_ASM584v2_genomic.fna.gz | head -20
+
+<details>
+<summary>Console output: FASTA header and 19 more lines</summary>
 >NC_000913.3 Escherichia coli str. K-12 substr. MG1655, complete genome
 AGCTTTTCATTCTGACTGCAACGGGCAATATGTCTCTGTGTGGATTAAAAAAAGAGTGTCTGATAGCAGCTTCTGAACTG
 GTTACCTGCCGTGAGTAAATTAAAATTTTATTGACTTAGGTCACTAAATACTTTAACCAATATAGGCATAGCGCACAGAC
@@ -134,26 +139,33 @@ CAAGCACCAGGTACGCTCATTGGTGCCAGCCGTGATGAAGACGAATTACCGGTCAAGGGCATTTCCAATCTGAATAACAT
 GGCAATGTTCAGCGTTTCTGGTCCGGGGATGAAAGGGATGGTCGGCATGGCGGCGCGCGTCTTTGCAGCGATGTCACGCG
 CCCGTATTTCCGTGGTGCTGATTACGCAATCATCTTCCGAATACAGCATCAGTTTCTGCGTTCCACAAAGCGACTGTGTG
 CGAGCTGAACGGGCAATGCAGGAAGAGTTCTACCTGGAACTGAAAGAAGGCTTACTGGAGCCGCTGGCAGTGACGGAACG
+</details>
 
-There's only one contig (bacterial circular chromosome):
+I used zcat, grep, wc commands to check how many contigs are in the reference genome. There's only one contig -- bacterial circular chromosome, as expected.
+
 ```bash
 zcat raw_data/GCF_000005845.2_ASM584v2_genomic.fna.gz | grep -E "^>" | wc -l
-```
-(bioinf) ➜  01_prac_ampicillin_resistance git:(master) ✗ zcat raw_data/GCF_000005845.2_ASM584v2_genomic.fna.gz | grep -E "^>" | wc -l
-1
 
-Genome size is 4641652 bp.
+# Output: 1
+```
+
+To calculate reference genome size in bp I used pipe of zcat, grep (to filter the header of), transliterate with delete option (to get rid of newline character) and wordcount with character option. The reference genome size is 4,641,652 bp (4,6 Mb).
+The sanity check is passed. E. coli genomes size vary: 4,5 -- 5.5 Mb, depending on strain. K-12 is a lab strain that might lost expirienced size reduction during generations living in lab media.
+
 ```bash
 zcat raw_data/GCF_000005845.2_ASM584v2_genomic.fna.gz | grep -v "^>" | tr -d '\n' | wc -c
-```
-(bioinf) ➜  01_prac_ampicillin_resistance git:(master) ✗ zcat raw_data/GCF_000005845.2_ASM584v2_genomic.fna.gz | grep -v "^>" | tr -d '\n' | wc -c
-4641652
 
-Use head to verify genome annotation in GFF3 format.
+# Output: 4641652
+```
+
+Again, I used zcat and head pipe to verify genome annotation in GFF3 format.
 ```bash
 zcat raw_data/GCF_000005845.2_ASM584v2_genomic.gff.gz | head -20
 ```
-(bioinf) ➜  01_prac_ampicillin_resistance git:(master) ✗ zcat raw_data/GCF_000005845.2_ASM584v2_genomic.gff.gz | head -20
+
+<details>
+<summary>Console output: genofe annotation GFF-3 head</summary>
+
 ##gff-version 3
 #!gff-spec-version 1.21
 #!processor NCBI annotwriter
@@ -165,6 +177,7 @@ NC_000913.3     RefSeq  region  1       4641652 .       +       .       ID=NC_00
 NC_000913.3     RefSeq  gene    190     255     .       +       .       ID=gene-b0001;Dbxref=ASAP:ABE-0000006,ECOCYC:EG11277,GeneID:944742;Name=thrL;gbkey=Gene;gene=thrL;gene_biotype=protein_coding;gene_synonym=ECK0001;locus_tag=b0001
 NC_000913.3     RefSeq  CDS     190     255     .       +       0       ID=cds-NP_414542.1;Parent=gene-b0001;Dbxref=UniProtKB/Swiss-Prot:P0AD86,GenBank:NP_414542.1,ASAP:ABE-0000006,ECOCYC:EG11277,GeneID:944742;Name=NP_414542.1;gbkey=CDS;gene=thrL;locus_tag=b0001;product=thr operon leader peptide;protein_id=NP_414542.1;transl_table=11
 NC_000913.3     RefSeq  gene    337     2799    .       +       .       ID=gene-b0002;Dbxref=ASAP:ABE-0000008,ECOCYC:EG10998,GeneID:945803;Name=thrA;gbkey=Gene;gene=thrA;gene_biotype=protein_coding;gene_synonym=ECK0002,Hs,thrA1,thrA2,thrD;locus_tag=b0002
+</details>
 
 There're following tab separated fields in .gff (typical GFF3 format):
 <seqid><source><type><start><end><score><strand><phase>(attributes>
