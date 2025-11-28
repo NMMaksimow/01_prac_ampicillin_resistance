@@ -4,30 +4,25 @@
 # Goal: Identify mutations conferring ampicillin resistance by comparing resistant strain to reference genome
 ----
 
-################################################################
-################ 10/11/2025 ####################################
-################################################################
+## :calendar: 10 November 2025
 
-## 10-11-2025 Project setup and data download
-# ---- Antibiotic resistance in E. coli ----
-## ---- 00_Set up the project directory ----
-# activate environment
+<details>
+<summary>Basic commands to activate mamba environment, set up directory tree for the project, inititate git and create .gitignore</summary>
+
+Activate environment:
 ```bash
 mamba activate bioinf
 ```
-
-# create project directory tree
+Create project directory tree:
 ```bash
 mkdir -p 01_prac_ampicillin_resistance/{raw_data,logs,scripts,results}
 cd 01_prac_ampicillin_resistance/
 ```
-
-# initiate git
+Initiate Git:
 ```bash
 git init
 ```
-
-# create .gitignore with Here Document and End Of File (EOF text text EOF)
+Create .gitignore using Here Document and End Of File (EOF text text EOF):
 ```bash
 cat > .gitignore <<EOF
 # Raw data - too large for git
@@ -55,126 +50,30 @@ __pycache__/
 .DS_Store
 EOF
 ```
+</details>
 
-## GIT!
-(bioinf) ➜  01_prac_ampicillin_resistance git:(master) ✗ git add .gitignore README.md 01_lab_journal_nm.txt
-(bioinf) ➜  01_prac_ampicillin_resistance git:(master) ✗ git commit -m "Initial commit: project structure"
-[master (root-commit) 4daec69] Initial commit: project structure
- 3 files changed, 184 insertions(+)
- create mode 100644 .gitignore
- create mode 100644 01_lab_journal_nm.txt
- create mode 100644 README.md
-##
+After set up I made an initial Git commit.
 
-# these two were a bit dodgy (403 Forbidden)
-# amp_res_R1: https://figshare.com/ndownloader/files/23769689
-# amp_res_R2: https://figshare.com/ndownloader/files/23769692
+Programmatic download of reference genome, its annotat and MD5 checksums were straightforward with wget command. Download of read files using wget were a bit dodgy because of access to figshare (403 Forbidden).
 
-# interactive check whether connection exist
+First I thought it's a connection issue and used these commands for interactive check it.
+
+```bash
 wget --spider https://figshare.com/ndownloader/files/23769689
 wget --spider https://figshare.com/ndownloader/files/23769692
+```
 
-# to check MD5 checksum and write logs I used grep to filter only downloaded files from others present on ncbi
-# grep with -E Extended RegEx
-# \. means literally . not any symbol as in RegEx
-# otherwise script exited on error in log for MD5 check
+Then I understood that Figshare blocks programmatic access and shortcut it using --user-agent flag for wget (in script below). To check MD5 checksum I used md5checksums.txt (for reference genome and annotation) and created md5checksums_amp_res_reads.txt from MD5 on Figshare (for reads). I used grep (with -E option for Extended RegEx) to filter only downloaded files from others present on ncbi (use backslash to escape the dot: \. matches a literal period, not "any character" as in regex). 
 
-# all scripts should be run from the project directory 01_prac_ampicillin_resistance/
+Full script: [`scripts/01_downloading_raw_data_md5_check.sh`](scripts/01_downloading_raw_data_md5_check.sh)
 
-
-## ---- 01_Download raw data and verify its integrity ----
-##############################################
-#### 01_downloading_raw_data_md5_check.sh ####
-##############################################
-#!/bin/bash
-# This script
-# -- dowloads to raw_data dir:
-# 1) reference E. coli genome in fasta format (genomic.fna.gz);
-# 2) reference E. coli genome annotation in GFF3 format (genomic.gff.gz);
-# 3) files with MD5 checksums (for archives and uncompressed files as well);
-# 4) raw shotgun Illumina PE reads (_R1, _R2) of ampicillin-resistant E. coli stain in fastq format (fastq.gz).
-# -- checks MD5 sums for:
-# 1) reference and annotation (md5checksums.txt);
-# 2) raw reads _R1 and _R2 (md5checksums_amp_res_reads.txt).
-# -- writes to logs dir:
-# 1) data_downloading.log
-# 2) md5_check.log
-
-
-# exit on error, undefined variables, and pipe failures
-set -e
-set -u
-set -o pipefail
-
-##-- DOWNLOAD --
-
-echo "Downloading reference genome, annotation file and md5checksums..."
-wget -c -P raw_data -a logs/data_downloading.log \
-        https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/005/845/GCF_000005845.2_ASM584v2/GCF_000005845.2_ASM584v2_genomic.fna.gz \
-        https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/005/845/GCF_000005845.2_ASM584v2/GCF_000005845.2_ASM584v2_genomic.gff.gz \
-        https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/005/845/GCF_000005845.2_ASM584v2/md5checksums.txt \
-        https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/005/845/GCF_000005845.2_ASM584v2/uncompressed_checksums.txt
-
-# downlad raw reads from figshare
-# pretend to be a browser Mozilla/5.0 to pass figshare block
-# wget writes downloading progress messages to stderr 2>
-
-echo "Downloading reads _R1.fastq.gz ..."
-wget -c --user-agent="Mozilla/5.0" \
-  -O raw_data/amp_res_R1.fastq.gz \
-  https://figshare.com/ndownloader/files/23769689 \
-  -a logs/data_downloading.log
-
-echo "Downloading reads _R2.fastq.gz ..."
-wget -c --user-agent="Mozilla/5.0" \
-  -O raw_data/amp_res_R2.fastq.gz \
-  https://figshare.com/ndownloader/files/23769692 \
-  -a logs/data_downloading.log
-
-##--CHECK MD5 CHECKSUMS --
-# stdout and stderr directed to log file
-# grep otherwise the script will exit cause FAILED checks on un-downloaded files related to reference
-echo "Checking MD5 checksums for reference genome and genome annotation"
-cd raw_data
-grep -E "ASM584v2_genomic\.(fna|gff)\.gz" md5checksums.txt | md5sum -c > ../logs/md5_check.log 2>&1
-cd ..
-
-# create md5checksums file with hashes from figshare info and file names
-# field separator for md5checksums files is 2 spaces
-
-cat > raw_data/md5checksums_amp_res_reads.txt <<EOF
-181588f2e9196486479381bf3a0611e9  amp_res_R1.fastq.gz
-2a768a51991ac35baf8847c9be2a51f3  amp_res_R2.fastq.gz
-EOF
-
-echo "" >> logs/md5_check.log
-echo "Created MD5 checksums file for ampicillin-resistant reads:" >> logs/md5_check.log
-cat raw_data/md5checksums_amp_res_reads.txt >> logs/md5_check.log
-
-echo "Checking MD5 checksums for _R1 and _R2.fastq.gz read files"
-echo "" >> logs/md5_check.log
-cd raw_data
-md5sum -c md5checksums_amp_res_reads.txt >> ../logs/md5_check.log 2>&1
-cd ..
-
-echo "Download and MD5 verification completed successfully!"
-
-##############################################
-##############################################
-
-## GIT!
-(bioinf) ➜  01_prac_ampicillin_resistance git:(master) ✗ git add scripts/01_downloading_raw_data_md5_check.sh
-(bioinf) ➜  01_prac_ampicillin_resistance git:(master) ✗ git commit -m "Add script to download reference, annotation and raw reads with md5 check"
-[master fc60dff] Add script to download reference, annotation and raw reads with md5 check
- 1 file changed, 72 insertions(+)
- create mode 100644 scripts/01_downloading_raw_data_md5_check.sh
-##
-
-Run the script:
+To run the script I set up execution rights and use standard command:
 ```bash
 chmod +x scripts/01_downloading_raw_data_md5_check.sh
 bash scripts/01_downloading_raw_data_md5_check.sh
 ```
+<details>
+<summary>The console output</summary>
 (bioinf) ➜  01_prac_ampicillin_resistance git:(master) bash scripts/01_downloading_raw_data_md5_check.sh
 Downloading reference genome, annotation file and md5checksums...
 Downloading reads _R1.fastq.gz ...
@@ -182,30 +81,9 @@ Downloading reads _R2.fastq.gz ...
 Checking MD5 checksums for reference genome and genome annotation
 Checking MD5 checksums for _R1 and _R2.fastq.gz read files
 Download and MD5 verification completed successfully!
+</details>
 
-
-## GIT!
-(bioinf) ➜  01_prac_ampicillin_resistance git:(master) ✗ git add .gitignore logs/
-(bioinf) ➜  01_prac_ampicillin_resistance git:(master) ✗ git status
-On branch master
-Changes to be committed:
-  (use "git restore --staged <file>..." to unstage)
-        modified:   .gitignore
-        new file:   logs/data_downloading.log
-        new file:   logs/md5_check.log
-        new file:   raw_data/md5checksums.txt
-        new file:   raw_data/md5checksums_amp_res_reads.txt
-        new file:   raw_data/uncompressed_checksums.txt
-
-(bioinf) ➜  01_prac_ampicillin_resistance git:(master) ✗ git commit -m "Add download and md5 check logs, raw data too big"
-[master 3e6e440] Add download and md5 check logs, raw data too big
- 6 files changed, 1881 insertions(+), 3 deletions(-)
- create mode 100644 logs/data_downloading.log
- create mode 100644 logs/md5_check.log
- create mode 100644 raw_data/md5checksums.txt
- create mode 100644 raw_data/md5checksums_amp_res_reads.txt
- create mode 100644 raw_data/uncompressed_checksums.txt
-##
+I performed Git commit after downloading data and its integrity.
 
 
 (bioinf) ➜  01_prac_ampicillin_resistance git:(master) tree .
