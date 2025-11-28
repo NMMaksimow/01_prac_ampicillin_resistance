@@ -1,6 +1,6 @@
 # LabJournal
 # Nikita Maksimov
-# Project: Identification of ampicillin-resistance mechanism in E. coli
+# Project: Identification of ampicillin-resistance mechanism in *E. coli*
 # Goal: Identify mutations conferring ampicillin resistance by comparing resistant strain to reference genome
 ----
 
@@ -112,7 +112,8 @@ tree .
 5 directories, 12 files
 ```
 
-I used zcat and head commands to verify reference genome fna.gz data format.
+I used zcat and head commands to verify reference genome fna.gz data format. The FASTA has header line starting wiht > symbol and DNA sequence as expected :white_check_mark:
+
 ```bash
 zcat raw_data/GCF_000005845.2_ASM584v2_genomic.fna.gz | head -20
 ```
@@ -141,7 +142,7 @@ CCCGTATTTCCGTGGTGCTGATTACGCAATCATCTTCCGAATACAGCATCAGTTTCTGCGTTCCACAAAGCGACTGTGTG
 CGAGCTGAACGGGCAATGCAGGAAGAGTTCTACCTGGAACTGAAAGAAGGCTTACTGGAGCCGCTGGCAGTGACGGAACG
 </details>
 
-I used zcat, grep, wc commands to check how many contigs are in the reference genome. There's only one contig -- bacterial circular chromosome, as expected.
+I used zcat, grep, wc commands to check how many contigs are in the reference genome. Wordcount command was used with option lines (-l). There's only one contig -- bacterial circular chromosome as expected.:white_check_mark:
 
 ```bash
 zcat raw_data/GCF_000005845.2_ASM584v2_genomic.fna.gz | grep -E "^>" | wc -l
@@ -150,7 +151,7 @@ zcat raw_data/GCF_000005845.2_ASM584v2_genomic.fna.gz | grep -E "^>" | wc -l
 ```
 
 To calculate reference genome size in bp I used pipe of zcat, grep (to filter the header of), transliterate with delete option (to get rid of newline character) and wordcount with character option. The reference genome size is 4,641,652 bp (4,6 Mb).
-The sanity check is passed. E. coli genomes size vary: 4,5 -- 5.5 Mb, depending on strain. K-12 is a lab strain that might lost expirienced size reduction during generations living in lab media.
+The sanity check is passed. *E. coli* genomes size vary: 4,5 — 5.5 Mb, depending on strain. K-12 is a lab strain that might expirienced size reduction being passed in lab environmnet for miriads of generations. :white_check_mark:
 
 ```bash
 zcat raw_data/GCF_000005845.2_ASM584v2_genomic.fna.gz | grep -v "^>" | tr -d '\n' | wc -c
@@ -158,7 +159,8 @@ zcat raw_data/GCF_000005845.2_ASM584v2_genomic.fna.gz | grep -v "^>" | tr -d '\n
 # Output: 4641652
 ```
 
-Again, I used zcat and head pipe to verify genome annotation in GFF3 format.
+Again, I used zcat and head pipe to verify genome annotation in GFF3 format. All looks as expected. :white_check_mark:
+
 ```bash
 zcat raw_data/GCF_000005845.2_ASM584v2_genomic.gff.gz | head -20
 ```
@@ -179,44 +181,63 @@ NC_000913.3     RefSeq  CDS     190     255     .       +       0       ID=cds-N
 NC_000913.3     RefSeq  gene    337     2799    .       +       .       ID=gene-b0002;Dbxref=ASAP:ABE-0000008,ECOCYC:EG10998,GeneID:945803;Name=thrA;gbkey=Gene;gene=thrA;gene_biotype=protein_coding;gene_synonym=ECK0002,Hs,thrA1,thrA2,thrD;locus_tag=b0002
 </details>
 
-There're following tab separated fields in .gff (typical GFF3 format):
-<seqid><source><type><start><end><score><strand><phase>(attributes>
+GFF3 starts with header lines (marked with #) and then the body consists tab-separated fields:
 
-There're 9523 annotated sequences in the reference genome. I used grep -v "^#" to remove header lines before counting annotation entries:
+`seqid | source | type | start | end | score | strand | phase | attributes`
+
+- `seqid` — Chromosome/contig ID
+- `source` — Annotation source (e.g., RefSeq)
+- `type` — Feature type (gene, CDS, exon, etc.)
+- `start` — Start position (1-based)
+- `end` — End position
+- `score` — Score (`.` if not applicable)
+- `strand` — `+` or `-`
+- `phase` — Reading frame for CDS (0, 1, 2)
+- `attributes` — Semicolon-separated key=value pairs
+
+
+I used zcat, grep and wordcount to calcultate all entries in GFF genome annotation. I used invert match option (-v "^#") to remove header lines in annotation before counting.
+
 ```bash
 zcat raw_data/GCF_000005845.2_ASM584v2_genomic.gff.gz | grep -v "^#" | wc -l
+
+# Output: 9523
 ```
 
-(bioinf) ➜  01_prac_ampicillin_resistance git:(master) ✗ zcat raw_data/GCF_000005845.2_ASM584v2_genomic.gff.gz | wc -l
-9531
-(bioinf) ➜  01_prac_ampicillin_resistance git:(master) ✗ zcat raw_data/GCF_000005845.2_ASM584v2_genomic.gff.gz | grep -v "^#" | wc -l
-9523
+<details>
+<summary>Without grep filtering I got total number of lines in GFF annotation including header lines.</summary>
 
-There're 11 unique features in reference annotation.
+```bash
+zcat raw_data/GCF_000005845.2_ASM584v2_genomic.gff.gz | wc -l
+
+# Output: 9531
+```
+</details>
+
+To further explore GFF annotation I used zcat, grep, cut, sort, wc pipe to examine the unique feature types (the third column). I used option field (-f3) to specify third column for cut command. There're 11 unique features in reference annotation.
 ```bash
 zcat raw_data/GCF_000005845.2_ASM584v2_genomic.gff.gz| grep -v "^#" | cut -f3 | sort -u | wc -l
+
+# Output: 11
 ```
 
-(bioinf) ➜  01_prac_ampicillin_resistance git:(master) ✗ zcat raw_data/GCF_000005845.2_ASM584v2_genomic.gff.gz| grep -v "^#" | cut -f3 | sort -u | wc -l
-11
-
-The list of fatures in annotation <type>:
+To list features in annotation I combined zcat, grep, cut, sort and uniq with count flag (-c):
 ```bash
 zcat raw_data/GCF_000005845.2_ASM584v2_genomic.gff.gz | grep -v "^#" | cut -f3 | sort | uniq -c
-```
 
-(bioinf) ➜  01_prac_ampicillin_resistance git:(master) ✗ zcat raw_data/GCF_000005845.2_ASM584v2_genomic.gff.gz | grep -v "^#" | cut -f3 | sort | uniq -c
-   4340 CDS
-    216 exon
-   4506 gene
-     50 mobile_genetic_element
-    108 ncRNA
-      1 origin_of_replication
-    145 pseudogene
-     22 rRNA
-      1 region
-     48 sequence_feature
-     86 tRNA
+# Output:
+#   4340 CDS
+#    216 exon
+#   4506 gene
+#     50 mobile_genetic_element
+#    108 ncRNA
+#      1 origin_of_replication
+#    145 pseudogene
+#     22 rRNA
+#      1 region
+#     48 sequence_feature
+#     86 tRNA
+```
 
 I used wc -l command to count lines and then divideby 4 to count read number in FASTQ raw files.
 There're 455,876 of forward (R1) and reverse (R2) reads.
