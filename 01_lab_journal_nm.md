@@ -1,11 +1,9 @@
-# LabJournal
-# Nikita Maksimov
-# Project: Identification of ampicillin-resistance mechanism in *E. coli*
-# Goal: Identify mutations conferring ampicillin resistance by comparing resistant strain to reference genome
+# Lab journal: Identification of ampicillin-resistance mechanism in *E. coli*
+## Objective: Identify mutations conferring ampicillin resistance by comparing resistant strain to reference genome
 ----
 
 #### :calendar: 10 November 2025
-### Project seting up project directory, downloading data, checking MD5 checksums and inspecing files
+### Project seting up project directory, downloading data, checking MD5 checksums and inspecting files
 <details>
 <summary>Basic commands to activate mamba environment, set up directory tree for the project, inititate git and create .gitignore</summary>
 
@@ -386,16 +384,14 @@ mkdir -p results/fastqc_trimmomatic_strictly_trimmed
 fastqc results/trimmomatic_strictly_trimmed/*P.fastq.gz -o results/fastqc_trimmomatic_strictly_trimmed &> logs/fastqc_trimmomatic_strictrly_trimmed.log
 ```
 
-### Alignment and mapping
-bwa already exists in the environment, so there's no need for installation
-
-Creating index for reference genome using bwa index command:
+### Mapping and aligning reads to the reference genome using `bwa` (**B**urrows–**W**heeler transform **a**ligner)
+`bwa` already exists in my bioinf mamba environment. Before mapping reads on reference genome I created genome index using the following `bwa index` command. I redirected stderr and stdout to the log file.
 ```bash
 bwa index raw_data/GCF_000005845.2_ASM584v2_genomic.fna.gz &> logs/bwa_index.log
 ```
 
-NB! Resulting BW index files (suffixes .amb, .ann, .bwt, .pac, .sa) are located in raw_data directory, so that other programs can find them.
-
+NB! Resulting BW index files with extentions `.amb`, `.ann`, `.bwt`, `.pac`, `.sa` are located in `raw_data/` directory, so that other programs can find them together with the reference genome.
+```
 ├── raw_data
 │   ├── GCF_000005845.2_ASM584v2_genomic.fna.gz
 │   ├── GCF_000005845.2_ASM584v2_genomic.fna.gz.amb
@@ -409,47 +405,76 @@ NB! Resulting BW index files (suffixes .amb, .ann, .bwt, .pac, .sa) are located 
 │   ├── md5checksums.txt
 │   ├── md5checksums_amp_res_reads.txt
 │   └── uncompressed_checksums.txt
-
-Aligning and mapping trimmed R1 and R2 reads to reference genome:
-
+```
+I run `bwa mem` command to map all trimmed reads on reference genome and generate `.sam` files three times using three input different trimming strategies.
 ```bash
 mkdir results/bwa_alignments
-```
+# relaxed trimmomatic input
 
-Three alignments SAM files will be generated based on three different trimming strategies.
-# trimmomatic trimming
-```bash
 bwa mem raw_data/GCF_000005845.2_ASM584v2_genomic.fna.gz \
 	results/trimmomatic_trimmed/amp_res_1P.fastq.gz \
 	results/trimmomatic_trimmed/amp_res_2P.fastq.gz \
 	> results/bwa_alignments/aln_trimmomatic_trimmed.sam 2> logs/bwa_mem_trimmomatic.log
-```
-# strict trimmomatic trimming
-```bash	
+
+# strict trimmomatic input
+	
 bwa mem raw_data/GCF_000005845.2_ASM584v2_genomic.fna.gz \
 	results/trimmomatic_strictly_trimmed/amp_res_strictly_1P.fastq.gz \
 	results/trimmomatic_strictly_trimmed/amp_res_strictly_2P.fastq.gz \
 	> results/bwa_alignments/aln_trimmomatic_strictly_trimmed.sam 2> logs/bwa_mem_trimmomatic_strictly.log \
-```
-# fastp trimming
-```bash
+
+# fastp trimming input
+
 bwa mem raw_data/GCF_000005845.2_ASM584v2_genomic.fna.gz \
 	results/fastp_trimmed/amp_res_R1_trimmed.fastq.gz \
 	results/fastp_trimmed/amp_res_R2_trimmed.fastq.gz \
 	> results/bwa_alignments/aln_fastp.sam 2> logs/bwa_mem_fastp.log 
-```
 
 ├── results
 │   ├── bwa_alignments
 │   │   ├── aln_fastp.sam
 │   │   ├── aln_trimmomatic_strictly_trimmed.sam
 │   │   └── aln_trimmomatic_trimmed.sam
+```
 
-Inspect SAM files:
+#### Inspecting SAM (**S**equence **A**lignment/**M**ap) files
+Flag `-S` for `less` result in tab-separated output.
 ```bash
 less -S results/bwa_alignments/aln_trimmomatic_strictly_trimmed.sam
+
+head -6 results/bwa_alignments/aln_trimmomatic_strictly_trimmed.sam
+
+# Output:
+# @HD     VN:1.5  SO:unsorted     GO:query
+# @SQ     SN:NC_000913.3  LN:4641652
+# @PG     ID:bwa  PN:bwa  VN:0.7.19-r1273 CL:bwa mem raw_data/GCF_000005845.2_ASM584v2_genomic.fna.gz results/trimmomatic_strictly_trimmed/amp_res_strictly_1P.fastq.gz results/trimmomatic_strictly_trimmed/amp_res_strictly_2P.fastq.gz
+# SRR1363257.78   99      NC_000913.3     2481291 60      100M    =       2481359 169     GCATAAGGACGATCGCTCCAGAGTAAAATAAATACGCGCATGTGATACTCACAATACCAATGGTGAAGTTACGGGACTTAAACAAACTGAGATCAAGAAT        CCCFFFFFHHHHHJJJJJJJJJJFFHIJJJJJJJJJJJJJJJJJJJJJJJIJHHHHHHFDEDF;AEEEEEEDDDDDBBACDDDCDDDDCCDDDDDDCCDC        NM:i:0  MD:Z:100        MC:Z:101M       MQ:i:60 AS:i:100        XS:i:0
+# SRR1363257.78   147     NC_000913.3     2481359 60      101M    =       2481291 -169    TTACGGGACTTAAACAAACTGAGATCAAGAATCGGGTTCTCTGAGGTCGACTCCCAAATGACTAAAGAGATCAGAGAAATAACTGATACTACTGTTAATAT       BDDDCCDCCAA?DEEEFEEEFFFFFFHHHHHGJJJJJJJIJIJJJIJIHGGGIIJIJJHIHJIJJJJJJIGJIJJJJIJJJJJIJJIHHHHHHFFFFFCCB       NM:i:0  MD:Z:101        MC:Z:100M       MQ:i:60 AS:i:101        XS:i:0
+# SRR1363257.96   99      NC_000913.3     348418  60      101M    =       348420  103     TCATTAAGCCGTGGTGGATGTGCCATAGCGCACCGCAAAGTTAAGAAACCGAATATTGGGTTTAGTCTTGTTTCATAATTGTTGCAATGAAACGCGGTGAA       CCCFFFFFHHHHHJHIIJIIIIJJJJJJGIJJJJJIJJIIGHJJJJJIIJJDHFFFFFEDACDDDCDDDDCCDDECACCDCCCDACDDDDCCDDDDDBD@A       NM:i:0  MD:Z:101        MC:Z:101M       MQ:i:60 AS:i:101        XS:i:0
 ```
-For loop for: converting SAM to binary alignment map file (BAM), sorting BAM (add suffix _sorted.bam) and building index on sorted files (.bai)
+
+
+SAM format start with headers specified with @ (including command used to generate the file) and contains 11 mandatory fields (tab-separated):
+1. `QNAME` — query name (read identifier)
+2. `FLAG` — bitwise flag encoding read properties (mapped/unmapped, strand, pair orientation, etc.)
+3. `RNAME` — reference sequence name (chromosome/contig where read mapped)
+4. `POS` — leftmost mapping position on reference (1-based)
+5. `MAPQ` — mapping quality score (0–60, higher = more confident)
+6. `CIGAR` — alignment description string (e.g., `100M` = 100 matches, `50M2D48M` = 50 matches, 2 deletions, 48 matches)
+7. `RNEXT` — reference name for the mate read (`=` if same as RNAME, `*` if unavailable)
+8. `PNEXT` — mapping position of the mate read
+9. `TLEN` — observed template/fragment length (insert size)
+10. `SEQ` — read sequence
+11. `QUAL` — per-base quality scores (Phred-scaled, ASCII-encoded)
+
+Optional fields (tags) may follow, e.g., `NM:i:2` (number of mismatches), `MD:Z:...` (mismatch positions).
+
+#### Archiving `.sam` files, sorting `.bam` and indexing binary alignments to get `.bai` using `samtools`
+I used for loop to:
+- convert `.sam` to `.bam` files (**b**inary **a**lignment **m**ap) using `samtools view -b` command;
+- sort `.bam` files (add suffix _sorted.bam) using `samtools sort` command;
+- build index (`.bai`) on sorted `.bam` files using `samtools index` command.
+All stderr redirected to log file (NB! append >> to prevent overwriting during for loop iterations). 
 ```bash
 for sam in results/bwa_alignments/*.sam; do
     # basename 
@@ -471,74 +496,78 @@ for sam in results/bwa_alignments/*.sam; do
 done
 ```
 
-IGV need uncompressed reference genome in FASTA format so I extracted reference from the archive using gunzip.
-Flag -k preserves original fna.gz archive.
+#### Using Interactive Genome Viewer (IGV) EDA for genomic data visualization 
+IGV requires uncompressed reference genome. I extracted reference from the archive using `gunzip` with `-k` flag preserves original `.fna.gz` archive.
 ```bash
 gunzip -k raw_data/GCF_000005845.2_ASM584v2_genomic.fna.gz
 ```
 
-I decided to check md5 checksum. But the command I used earlier failed.
+I decided to check md5 checksum of uncompressed FASTA reference genome. The `md5sum` command I used earlier failed.
 ```bash
 md5sum -c raw_data/uncompressed_checksums.txt
 ```
+<details>
+<summary> Checksums for uncompressed files from NCBI are stored in 4 column format. </summary>
 
-Checksums for uncompressed files from ncbi is stored in 4 column format.
-(bioinf) ➜  01_prac_ampicillin_resistance git:(master) ✗ cat raw_data/uncompressed_checksums.txt
-#file   md5sum  crc32   size
-./GCF_000005845.2_ASM584v2_ani_contam_ranges.tsv        0feb9ab0ef81aed6d768628d50b119fd        0c012c82        46803
-./GCF_000005845.2_ASM584v2_ani_report.txt       e3cc1640429bfbb576a1328b0b371fff        bb0bd3b6        5812
-./GCF_000005845.2_ASM584v2_assembly_report.txt  5d767338dae878d0d547ca5edb138df3        28f934b1        1207
-./GCF_000005845.2_ASM584v2_cds_from_genomic.fna 113ad98b89cb697e22aae117a1ae1a89        b0a79c52        5043627
-./GCF_000005845.2_ASM584v2_fcs_report.txt       9bd2c1f0b8d87e8b1b7215551c099c17        924e232e        667
-./GCF_000005845.2_ASM584v2_genomic.fna  92c997bcd88e983ffdb21b2712ed3736        f36bbf76        4699745
-./GCF_000005845.2_ASM584v2_genomic.gbff 80edc82b4a5d19198f1eee5a3848fdac        c80a55e4        11882100
-./GCF_000005845.2_ASM584v2_genomic.gff  a7cef966c981b35c5bbf30c3df923312        f5f907ce        2467646
-./GCF_000005845.2_ASM584v2_genomic.gtf  27882704f8ef02338681dcdd2ee6d26b        4bbbd7df        6774966
-./GCF_000005845.2_ASM584v2_protein.faa  4c19a285fd7a4e75ce34a466fcf0607f        25917a05        1750878
-./GCF_000005845.2_ASM584v2_rna_from_genomic.fna fd55823557f1ecb83c3d8939a0e88aea        0796f039        97814
-./GCF_000005845.2_ASM584v2_translated_cds.faa   1d55819ca9d1172f528ff26ccb9687a0        7b546c56        2325398
+```bash
+cat raw_data/uncompressed_checksums.txt
 
-Commmand to quick check of md5checksums on uncompressed files.
-awk changes the order of hashes and file names to feed md5sum
-tail -n +2 command start printin from the second line and reads input up to the end of file (need to omit headers from 4-column ncbi checksum file)
+# Output:
+# #file   md5sum  crc32   size
+# ./GCF_000005845.2_ASM584v2_ani_contam_ranges.tsv        0feb9ab0ef81aed6d768628d50b119fd        0c012c82        46803
+# ./GCF_000005845.2_ASM584v2_ani_report.txt       e3cc1640429bfbb576a1328b0b371fff        bb0bd3b6        5812
+# ./GCF_000005845.2_ASM584v2_assembly_report.txt  5d767338dae878d0d547ca5edb138df3        28f934b1        1207
+# ./GCF_000005845.2_ASM584v2_cds_from_genomic.fna 113ad98b89cb697e22aae117a1ae1a89        b0a79c52        5043627
+# ./GCF_000005845.2_ASM584v2_fcs_report.txt       9bd2c1f0b8d87e8b1b7215551c099c17        924e232e        667
+# ./GCF_000005845.2_ASM584v2_genomic.fna  92c997bcd88e983ffdb21b2712ed3736        f36bbf76        4699745
+# ./GCF_000005845.2_ASM584v2_genomic.gbff 80edc82b4a5d19198f1eee5a3848fdac        c80a55e4        11882100
+# ./GCF_000005845.2_ASM584v2_genomic.gff  a7cef966c981b35c5bbf30c3df923312        f5f907ce        2467646
+# ./GCF_000005845.2_ASM584v2_genomic.gtf  27882704f8ef02338681dcdd2ee6d26b        4bbbd7df        6774966
+# ./GCF_000005845.2_ASM584v2_protein.faa  4c19a285fd7a4e75ce34a466fcf0607f        25917a05        1750878
+# ./GCF_000005845.2_ASM584v2_rna_from_genomic.fna fd55823557f1ecb83c3d8939a0e88aea        0796f039        97814
+# ./GCF_000005845.2_ASM584v2_translated_cds.faa   1d55819ca9d1172f528ff26ccb9687a0        7b546c56        2325398
+```
+</details>
+
+To work it around I used `awk` to change the order of hashes and file names to feed it then to `md5sum`.
+tail -n +2 command start printing from the second line and reads input up to the end of file (need to omit headers from 4-column ncbi checksum file)
 ```bash
 cd raw_data
 awk '{print $2, $1}' uncompressed_checksums.txt | tail -n +2 | md5sum -c
 cd ..
+
+# md5sum: ./GCF_000005845.2_ASM584v2_ani_contam_ranges.tsv: No such file or directory
+# ./GCF_000005845.2_ASM584v2_ani_contam_ranges.tsv: FAILED open or read
+# md5sum: ./GCF_000005845.2_ASM584v2_ani_report.txt: No such file or directory
+# ./GCF_000005845.2_ASM584v2_ani_report.txt: FAILED open or read
+# md5sum: ./GCF_000005845.2_ASM584v2_assembly_report.txt: No such file or directory
+# ./GCF_000005845.2_ASM584v2_assembly_report.txt: FAILED open or read
+# md5sum: ./GCF_000005845.2_ASM584v2_cds_from_genomic.fna: No such file or directory
+# ./GCF_000005845.2_ASM584v2_cds_from_genomic.fna: FAILED open or read
+# md5sum: ./GCF_000005845.2_ASM584v2_fcs_report.txt: No such file or directory
+# ./GCF_000005845.2_ASM584v2_fcs_report.txt: FAILED open or read
+# ./GCF_000005845.2_ASM584v2_genomic.fna: OK
+# md5sum: ./GCF_000005845.2_ASM584v2_genomic.gbff: No such file or directory
+# ./GCF_000005845.2_ASM584v2_genomic.gbff: FAILED open or read
+# md5sum: ./GCF_000005845.2_ASM584v2_genomic.gff: No such file or directory
+# ./GCF_000005845.2_ASM584v2_genomic.gff: FAILED open or read
+# md5sum: ./GCF_000005845.2_ASM584v2_genomic.gtf: No such file or directory
+# ./GCF_000005845.2_ASM584v2_genomic.gtf: FAILED open or read
+# md5sum: ./GCF_000005845.2_ASM584v2_protein.faa: No such file or directory
+# ./GCF_000005845.2_ASM584v2_protein.faa: FAILED open or read
+# md5sum: ./GCF_000005845.2_ASM584v2_rna_from_genomic.fna: No such file or directory
+# ./GCF_000005845.2_ASM584v2_rna_from_genomic.fna: FAILED open or read
+# md5sum: ./GCF_000005845.2_ASM584v2_translated_cds.faa: No such file or directory
+# ./GCF_000005845.2_ASM584v2_translated_cds.faa: FAILED open or read
+# md5sum: WARNING: 11 listed files could not be read
 ```
 
-(bioinf) ➜  raw_data git:(master) ✗ awk '{print $2, $1}' uncompressed_checksums.txt | tail -n +2 | md5sum -c
-md5sum: ./GCF_000005845.2_ASM584v2_ani_contam_ranges.tsv: No such file or directory
-./GCF_000005845.2_ASM584v2_ani_contam_ranges.tsv: FAILED open or read
-md5sum: ./GCF_000005845.2_ASM584v2_ani_report.txt: No such file or directory
-./GCF_000005845.2_ASM584v2_ani_report.txt: FAILED open or read
-md5sum: ./GCF_000005845.2_ASM584v2_assembly_report.txt: No such file or directory
-./GCF_000005845.2_ASM584v2_assembly_report.txt: FAILED open or read
-md5sum: ./GCF_000005845.2_ASM584v2_cds_from_genomic.fna: No such file or directory
-./GCF_000005845.2_ASM584v2_cds_from_genomic.fna: FAILED open or read
-md5sum: ./GCF_000005845.2_ASM584v2_fcs_report.txt: No such file or directory
-./GCF_000005845.2_ASM584v2_fcs_report.txt: FAILED open or read
-./GCF_000005845.2_ASM584v2_genomic.fna: OK
-md5sum: ./GCF_000005845.2_ASM584v2_genomic.gbff: No such file or directory
-./GCF_000005845.2_ASM584v2_genomic.gbff: FAILED open or read
-md5sum: ./GCF_000005845.2_ASM584v2_genomic.gff: No such file or directory
-./GCF_000005845.2_ASM584v2_genomic.gff: FAILED open or read
-md5sum: ./GCF_000005845.2_ASM584v2_genomic.gtf: No such file or directory
-./GCF_000005845.2_ASM584v2_genomic.gtf: FAILED open or read
-md5sum: ./GCF_000005845.2_ASM584v2_protein.faa: No such file or directory
-./GCF_000005845.2_ASM584v2_protein.faa: FAILED open or read
-md5sum: ./GCF_000005845.2_ASM584v2_rna_from_genomic.fna: No such file or directory
-./GCF_000005845.2_ASM584v2_rna_from_genomic.fna: FAILED open or read
-md5sum: ./GCF_000005845.2_ASM584v2_translated_cds.faa: No such file or directory
-./GCF_000005845.2_ASM584v2_translated_cds.faa: FAILED open or read
-md5sum: WARNING: 11 listed files could not be read
+To inspect mapped reads in IGV I uploaded:
+1) genome reference `.fna`
+2) archived annotation `gff.gz` 
+3) sorted binary alignment map `_sorted.bam` with index `_sorted.bam.bai` in the same directory
 
-Inspect in IGV:
-1) genome reference in .fna,
-2) archived annotation gff.gz and 
-3) alignment map _sorted.bam with index _sorted.bam.bai in the same directory
-
-Some summary on alignment map files.
+Summary on alignment map files.
 ```bash
 mkdir -p results/alignment_stats
 ```
@@ -551,69 +580,21 @@ for bam in results/bwa_alignments/*_sorted.bam; do
 done
 ```
 
-##############################################
-#### Script to collect alignment stats #######
-##############################################
-#!/usr/bin/env bash
-set -euo pipefail
+I wrote script collecting alignment statistics: [`scripts/02_collecting_aln_stats.sh`](scripts/02_collecting_aln_stats.sh)
 
-# === PATHS ===
-ALIGN_DIR="results/bwa_alignments"
-STATS_DIR="results/alignment_stats"
-LOG_DIR="logs"
-OUTFILE="${STATS_DIR}/alignment_summary.tsv"
+### Variant calling using `varscan`
+<details>
+<summary> I installed `varscan` to bioinf mamba environment.</summary>
 
-mkdir -p "$STATS_DIR" "$LOG_DIR"
-
-echo -e "sample\ttotal_reads\tmapped_reads\tproperly_paired\tpercent_mapped\tpercent_proper\tmean_depth\tavg_MAPQ" > "$OUTFILE"
-
-# === MAIN LOOP ===
-for bam in ${ALIGN_DIR}/*_sorted.bam; do
-    base=$(basename "$bam" _sorted.bam)
-    flagfile="${STATS_DIR}/${base}_flagstat.txt"
-    idxfile="${STATS_DIR}/${base}_idxstats.txt"
-
-    echo "Processing ${base}..."
-
-    # total reads
-    total=$(grep "in total" "$flagfile" | awk '{print $1}')
-    # mapped reads
-    mapped=$(grep " mapped (" "$flagfile" | head -n1 | awk '{print $1}')
-    # properly paired reads
-    proper=$(grep "properly paired" "$flagfile" | awk '{print $1}')
-    # % mapped
-    pmapped=$(awk -v m=$mapped -v t=$total 'BEGIN{printf "%.2f", (m/t)*100}')
-    # % proper
-    pproper=$(awk -v p=$proper -v t=$total 'BEGIN{printf "%.2f", (p/t)*100}')
-
-    # mean depth (все позиции, включая нулевые)
-    depth=$(samtools depth -a "$bam" | awk '{sum+=$3; n++} END{if(n>0) print sum/n; else print 0}')
-
-    # среднее значение MAPQ
-    mapq=$(samtools view "$bam" | awk '{m[$5]++} END{for (k in m){sum+=k*m[k]; n+=m[k]} if(n>0) printf "%.2f", sum/n; else print 0}')
-
-    echo -e "${base}\t${total}\t${mapped}\t${proper}\t${pmapped}\t${pproper}\t${depth}\t${mapq}" >> "$OUTFILE"
-done
-
-echo "Summary written to: $OUTFILE"
-
-##############################################
-##############################################
-
-
-## ---- 06 Variant calling ----
 ```bash
 mamba install -c bioconda -c conda-forge varscan
-```
-```bash
 varscan --help
-```
-
-```bash
 mkdir -p results/variant_calling
 ```
-Create mpileup files to count how many reads have a mutation at the same position.
-mpileup files are required for SNP calling by varscan
+</details>
+
+#### `.mpileup` files are required for SNP calling by `varscan`
+I generated mpileup files to count how many reads have a mutation at the particular position using `samtools mpileup` command.
 
 ```bash
 for bam in results/bwa_alignments/*_sorted.bam; do
@@ -627,12 +608,13 @@ for bam in results/bwa_alignments/*_sorted.bam; do
         2>> logs/samtools_mpileup.log
 done
 ```
-Extracts on some of samtools mpileup options from samtools mpileup --help:
-  -B, --no-BAQ            disable BAQ (per-Base Alignment Quality)
-  -q, --min-MQ INT        skip alignments with mapQ smaller than INT [0]
-  -Q, --min-BQ INT        skip bases with baseQ/BAQ smaller than INT [13]
- 
-SNP calling
+
+#### SNP calling using `varscan`
+To retrive single nucleotide polymorphisms I run `varscan mpileup2snp` command with the following options:
+- `--min-var-freq 0.7` — minimum variant allele frequency to call SNPs 70% (only positions where ≥70% of reads support the variant were called);
+- `--variants` — output only variant positions (exclude positions matching reference);
+- `--output-vcf 1` — output in VCF format (1 = yes, 0 = native VarScan tabular format).
+
 ```bash
 for mpileup in results/variant_calling/*.mpileup; do
     base=$(basename "$mpileup" .mpileup)
@@ -647,8 +629,16 @@ for mpileup in results/variant_calling/*.mpileup; do
 done
 ```
 
-VCF (variant call format) is a tabular format and it could be digested by IGV for visualization.
-(bioinf) ➜  01_prac_ampicillin_resistance git:(master) ✗ less -S results/variant_calling/varscan_res_aln_trimmomatic_trimmed.vcf | grep -v "^##" | cat
+VCF (**v**ariant **c**all **f**ormat) is another tabular format and `.vcf` files can be digested by IGV for visualization.
+
+I used the following command to inspect `.vcf` files.
+```bash
+less -S results/variant_calling/varscan_res_aln_trimmomatic_trimmed.vcf | grep -v "^##" | cat
+```
+<details>
+<summary>Output:</summary>
+
+```
 #CHROM  POS     ID      REF     ALT     QUAL    FILTER  INFO    FORMAT  Sample1
 NC_000913.3     93043   .       C       G       .       PASS    ADP=17;WT=0;HET=0;HOM=1;NC=0    GT:GQ:SDP:DP:RD:AD:FREQ:PVAL:RBQ:ABQ:RDF:RDR:ADF:ADR    1/1:93:18:17:0:17:100%:4.2852E-10:0:36:0:0:7:10
 NC_000913.3     482698  .       T       A       .       PASS    ADP=16;WT=0;HET=0;HOM=1;NC=0    GT:GQ:SDP:DP:RD:AD:FREQ:PVAL:RBQ:ABQ:RDF:RDR:ADF:ADR    1/1:87:16:16:0:16:100%:1.6637E-9:0:45:0:0:7:9
@@ -672,17 +662,18 @@ NC_000913.3     852762  .       A       G       .       PASS    ADP=13;WT=0;HET=
 NC_000913.3     1905761 .       G       A       .       PASS    ADP=12;WT=0;HET=0;HOM=1;NC=0    GT:GQ:SDP:DP:RD:AD:FREQ:PVAL:RBQ:ABQ:RDF:RDR:ADF:ADR    1/1:64:12:12:0:12:100%:3.698E-7:0:45:0:0:10:2
 NC_000913.3     3535147 .       A       C       .       PASS    ADP=10;WT=0;HET=0;HOM=1;NC=0    GT:GQ:SDP:DP:RD:AD:FREQ:PVAL:RBQ:ABQ:RDF:RDR:ADF:ADR    1/1:52:10:10:0:10:100%:5.4125E-6:0:39:0:0:5:5
 NC_000913.3     4390754 .       G       T       .       PASS    ADP=16;WT=0;HET=0;HOM=1;NC=0    GT:GQ:SDP:DP:RD:AD:FREQ:PVAL:RBQ:ABQ:RDF:RDR:ADF:ADR    1/1:87:16:16:0:16:100%:1.6637E-9:0:34:0:0:8:8
+```
+</details>
 
+#### Automatic SNP annotation and variant effect prediction
+I installed `snpEff` for automatic annotation and made a directory for K12 reference strain database.
+```bash
+mamba install -c bioconda snpEff
+mkdir -p results/snpEff/data/k12
+```
 
-## ---- 07 Automatic SNP annotation and variant effect prediction ----
 
 ```bash
-# downlad snpEff for automatica annotation
-mamba install -c bioconda snpEff
-
-# create a directory with K12 reference strain database
-mkdir -p results/snpEff/data/k12
-
 # create snpEff.config file in variant_calling directory
 cat > results/snpEff/snpEff.config <<EOF
 k12.genome : ecoli_K12
@@ -713,26 +704,21 @@ done
 ```bash
 grep "ANN=" results/variant_calling/varscan_res_aln_fastp_annotated.vcf \
   | sed 's/.*ANN=//' | cut -d'|' -f4 | sort | uniq -c
+
+#       1 acrB
+#       1 envZ
+#       1 ftsI
+#       1 glnH
+#       1 mntP
+#       1 rsgA
 ```
-
-(bioinf) ➜  01_prac_ampicillin_resistance git:(master) ✗ grep "ANN=" results/variant_calling/varscan_res_aln_fastp_annotated.vcf \
-  | sed 's/.*ANN=//' | cut -d'|' -f4 | sort | uniq -c
-
-      1 acrB
-      1 envZ
-      1 ftsI
-      1 glnH
-      1 mntP
-      1 rsgA
 	  
-################################################################
-################ 11/11/2025 ####################################
-################################################################
+#### :calendar: 11 November 2025
 
-# ============================================================
 # ============================================================
 
 #!/usr/bin/env bash
+
 # ============================================================
 # 00_check_software_versions.sh
 # Logs versions of all bioinformatics tools used in the pipeline
@@ -784,7 +770,11 @@ echo "Log saved to: ${LOG_FILE}"
 
 #######################################
 
-(base) ➜  01_prac_ampicillin_resistance git:(master) ✗ tree .
+
+<details>
+<summary>The final project directory tree.</summary>
+
+```
 .
 ├── 01_lab_journal_nm.txt
 ├── README.md
@@ -905,33 +895,33 @@ echo "Log saved to: ${LOG_FILE}"
 └── snpEff_summary.html
 
 18 directories, 100 files
+```
+</details>
 
-
-
-################################################################
-################ 13/11/2025 ####################################
-################################################################
-
-I tried to install MultiQC to bioinf environment, but that didn't work out.
-MultiQC requires Python 3.11 and it doesn't support my curren Python 3.13.
+#### :calendar: 13 November 2025
+I tried to install MultiQC to bioinf environment, but that didn't work out. MultiQC requires Python 3.11 and it doesn't support my current Python 3.13.
+<details>
+<summary> Failed attempt to install MultiQC </summary>
 
 ```bash
 mamba install -c bioconda multiqc 
-```
-(bioinf) ➜  01_prac_ampicillin_resistance git:(master) ✗ mamba install -c bioconda multiqc
-warning  libmamba 'repo.anaconda.com', a commercial channel hosted by Anaconda.com, is used.
-...
-    └─ pin on python =3.13 * is not installable because it requires
-       └─ python =3.13 *, which conflicts with any installable versions previously reported.
-critical libmamba Could not solve for environment specs
 
-To shortcut it, I installed MultiQC to its own mamba environment.
+# Output:
+# warning  libmamba 'repo.anaconda.com', a commercial channel hosted by Anaconda.com, is used.
+# ...
+#     └─ pin on python =3.13 * is not installable because it requires
+#        └─ python =3.13 *, which conflicts with any installable versions previously reported.
+# critical libmamba Could not solve for environment specs
+```
+</details>
+
+
+I worked it around installing MultiQC to its own mamba environment together with old python 3.11 (NB! I called this env: multiqc).
 ```bash
 mamba create -n multiqc -c conda-forge -c bioconda python=3.11 multiqc
+mamba activate multiqc
+multiqc --version
+# Output: multiqc, version 1.32
 ```
 
-(bioinf) ➜  01_prac_ampicillin_resistance git:(master) ✗ mamba activate multiqc
-(multiqc) ➜  01_prac_ampicillin_resistance git:(master) ✗ multiqc --version
-multiqc, version 1.32
-
-For some reason MultiQC don't see part of my fastqc reports. I dropped work with MultiQC for now.
+For some reason MultiQC didn't find some of my fastqc reports. So I dropped working with MultiQC for now.
